@@ -11,7 +11,7 @@ pub struct PlanetData {
     pub mass: f32,
     pub radius: f32,
     pub initial_velocity: Vec3,
-    velocity: Vec3,
+    pub velocity: Vec3,
 }
 
 impl PlanetData {
