@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use bevy::{
     prelude::*,
     render::{
@@ -8,14 +6,13 @@ use bevy::{
     },
 };
 use camera::camera_plugin::CustomCameraPlugin;
-use ground::setup_ground;
+use planet_bundle::{PlanetBundle, PlanetData};
 mod camera;
-mod ground;
+mod planet_bundle;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(CustomCameraPlugin)
-        .add_systems(Startup, setup_ground)
         .add_systems(Startup, setup_test)
         .add_systems(FixedUpdate, rotate)
         .run();
@@ -36,34 +33,53 @@ fn setup_test(
     mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
+    let sun_material = materials.add(StandardMaterial {
+        alpha_mode: AlphaMode::Mask(0.0),
+        ..Default::default()
+    });
+
     let debug_material = materials.add(StandardMaterial {
         base_color_texture: Some(images.add(uv_debug_texture())),
         ..default()
     });
 
-    let planet = meshes.add(Sphere::default().mesh().ico(5).unwrap());
-    //let planet2 = meshes.add(Sphere::default().mesh().uv(32, 18));
+    let sun_radius = 10.0;
+    let planet_radius = sun_radius * 0.3;
+
+    let sun = meshes.add(Sphere::new(sun_radius).mesh().ico(5).unwrap());
+    let planet = meshes.add(Sphere::new(planet_radius).mesh().ico(5).unwrap());
 
     commands.spawn((
-        PbrBundle {
-            mesh: planet.clone(),
-            material: debug_material.clone(),
-            transform: Transform::from_xyz(-5.0, 4.0, 0.0)
-                .with_rotation(Quat::from_rotation_x(-PI / 4.)),
-            ..Default::default()
+        PlanetBundle {
+            pbr: PbrBundle {
+                mesh: sun,
+                material: sun_material.clone(),
+                transform: Transform::from_xyz(0.0, 0.0, 0.0),
+                ..Default::default()
+            },
+            planet_data: PlanetData::new(1., sun_radius, Vec3::ZERO),
         },
         SpatialBody,
     ));
 
     commands.spawn((
-        PbrBundle {
-            mesh: planet,
-            material: debug_material.clone(),
-            transform: Transform::from_xyz(5.0, 4.0, 0.0),
-            ..Default::default()
+        PlanetBundle {
+            pbr: PbrBundle {
+                mesh: planet,
+                material: debug_material.clone(),
+                transform: Transform::from_xyz(100.0, 0.0, 0.0),
+                ..Default::default()
+            },
+            planet_data: PlanetData::new(1., planet_radius, Vec3::ZERO),
         },
         SpatialBody,
     ));
+
+    // light
+    commands.spawn(DirectionalLightBundle {
+        transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
 }
 /// Creates a colorful test pattern
 fn uv_debug_texture() -> Image {
