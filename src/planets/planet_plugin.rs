@@ -8,7 +8,7 @@ use bevy::{
     },
 };
 
-use crate::ui::SimulationState;
+use crate::ui::{AppConfig, SimulationState};
 
 use super::planet_bundle::{PlanetBundle, PlanetData};
 
@@ -23,7 +23,8 @@ impl Plugin for PlanetPlugin {
                 (update_velocities, update_positions)
                     .chain()
                     .run_if(in_state(SimulationState::Running)),
-            );
+            )
+            .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities));
     }
 }
 
@@ -40,7 +41,7 @@ fn update_velocities(
     mut query: Query<(&mut PlanetData, &Transform), With<SpatialBody>>,
     time: Res<Time>,
 ) {
-    let G = 1.;
+    let g = 1.;
 
     let mut operations = VecDeque::new();
     for (bd1, tfm1) in &query {
@@ -51,7 +52,7 @@ fn update_velocities(
             let sqrt_dist = tfm1.translation.distance_squared(tfm2.translation);
             let mass = bd1.mass;
             let force =
-                (tfm2.translation - tfm1.translation).normalize() * G * mass * bd2.mass / sqrt_dist;
+                (tfm2.translation - tfm1.translation).normalize() * g * mass * bd2.mass / sqrt_dist;
             operations.push_back(time.delta_seconds() * force / mass);
         }
     }
@@ -153,4 +154,21 @@ fn uv_debug_texture() -> Image {
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::RENDER_WORLD,
     )
+}
+
+fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
+    app_config.draw_velocities
+}
+
+fn draw_vectors(mut gizmos: Gizmos, query: Query<(&PlanetData, &Transform), With<SpatialBody>>) {
+    for (planet_data, transform) in &query {
+        let planet_position = transform.translation;
+        let planet_velocity = planet_data.velocity;
+
+        gizmos.arrow(
+            planet_position,
+            planet_position + planet_velocity / planet_data.radius,
+            Color::YELLOW,
+        );
+    }
 }

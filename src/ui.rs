@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{
+    egui::{self},
+    EguiContexts, EguiPlugin,
+};
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
 
@@ -10,7 +13,9 @@ pub enum SimulationState {
 }
 
 #[derive(Default, Resource)]
-pub struct AppConfig {}
+pub struct AppConfig {
+    pub draw_velocities: bool,
+}
 
 pub struct UIPlugin;
 impl Plugin for UIPlugin {
@@ -25,6 +30,7 @@ impl Plugin for UIPlugin {
 
 fn build_ui(
     mut contexts: EguiContexts,
+    mut app_config: ResMut<AppConfig>,
     sim_state: Res<State<SimulationState>>,
     mut next_sim_state: ResMut<NextState<SimulationState>>,
 ) {
@@ -45,6 +51,7 @@ fn build_ui(
                     }
                 }
             }
+            ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
 
             if ui.button("Quit").clicked() {
                 std::process::exit(0);
