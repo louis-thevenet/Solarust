@@ -203,21 +203,22 @@ fn draw_trajectories(
         let old_bodies_and_positions = bodies_and_positions.clone();
 
         for i in 0..bodies_and_positions.len() {
+            let mut total_velocity_to_add = Vec3::ZERO;
             for j in 0..bodies_and_positions.len() {
                 if i == j {
                     continue;
                 }
-                bodies_and_positions[i].2 = bodies_and_positions[i].2
-                    + bodies_and_positions[i].0.compute_velocity(
+                total_velocity_to_add += bodies_and_positions[i].0.compute_velocity(
                         old_bodies_and_positions[i].1,
                         old_bodies_and_positions[j].1,
                         old_bodies_and_positions[j].0.mass,
                         g,
                         delta_seconds,
                     );
-                bodies_and_positions[i].1 =
-                    bodies_and_positions[i].1 + bodies_and_positions[i].2 * delta_seconds;
             }
+            bodies_and_positions[i].2 += total_velocity_to_add;
+            bodies_and_positions[i].1 =
+                bodies_and_positions[i].1 + bodies_and_positions[i].2 * delta_seconds;
             gizmos.line(
                 old_bodies_and_positions[i].1,
                 bodies_and_positions[i].1,

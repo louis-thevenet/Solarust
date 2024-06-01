@@ -34,9 +34,9 @@ impl PlanetData {
         g: f32,
         delta_seconds: f32,
     ) -> Vec3 {
-        let sqrt_dist = position_1.distance_squared(position_2);
+        let squared_dist = position_1.distance_squared(position_2);
         let mass = self.mass;
-        let force = (position_2 - position_1).normalize() * g * mass * mass_2 / sqrt_dist;
+        let force = (position_2 - position_1).normalize() * g * mass * mass_2 / squared_dist;
 
         delta_seconds * force / mass
     }
