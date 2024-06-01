@@ -97,7 +97,6 @@ fn setup_test(
     let sun_radius = 10.0;
     let planet_radius = sun_radius * 0.3;
     let planet_initial_velocity = Vec3::new(0., 0., 100.);
-
     let sun = meshes.add(Sphere::new(sun_radius).mesh().ico(5).unwrap());
     let planet = meshes.add(Sphere::new(planet_radius).mesh().ico(5).unwrap());
 
@@ -209,12 +208,12 @@ fn draw_trajectories(
                     continue;
                 }
                 total_velocity_to_add += bodies_and_positions[i].0.compute_velocity(
-                        old_bodies_and_positions[i].1,
-                        old_bodies_and_positions[j].1,
-                        old_bodies_and_positions[j].0.mass,
-                        g,
-                        delta_seconds,
-                    );
+                    old_bodies_and_positions[i].1,
+                    old_bodies_and_positions[j].1,
+                    old_bodies_and_positions[j].0.mass,
+                    g,
+                    delta_seconds,
+                );
             }
             bodies_and_positions[i].2 += total_velocity_to_add;
             bodies_and_positions[i].1 =
