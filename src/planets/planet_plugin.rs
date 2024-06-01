@@ -24,7 +24,8 @@ impl Plugin for PlanetPlugin {
                     .chain()
                     .run_if(in_state(SimulationState::Running)),
             )
-            .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities));
+            .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
+            .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories));
     }
 }
 
@@ -45,16 +46,20 @@ fn update_velocities(
 
     let mut operations = VecDeque::new();
     for (bd1, tfm1) in &query {
+        let mut total_velocity_to_add = Vec3::ZERO;
         for (bd2, tfm2) in query.iter() {
             if tfm1 == tfm2 {
                 continue;
             }
-            let sqrt_dist = tfm1.translation.distance_squared(tfm2.translation);
-            let mass = bd1.mass;
-            let force =
-                (tfm2.translation - tfm1.translation).normalize() * g * mass * bd2.mass / sqrt_dist;
-            operations.push_back(time.delta_seconds() * force / mass);
+            total_velocity_to_add += bd1.compute_velocity(
+                tfm1.translation,
+                tfm2.translation,
+                bd2.mass,
+                g,
+                time.delta_seconds(),
+            );
         }
+        operations.push_back(total_velocity_to_add);
     }
 
     for (mut db, _) in query.iter_mut() {
@@ -170,5 +175,49 @@ fn draw_vectors(mut gizmos: Gizmos, query: Query<(&PlanetData, &Transform), With
             planet_position + planet_velocity / planet_data.radius,
             Color::YELLOW,
         );
+    }
+}
+
+fn run_if_draw_trajectories(app_config: Res<AppConfig>) -> bool {
+    app_config.draw_trajectories
+}
+
+fn draw_trajectories(
+    mut gizmos: Gizmos,
+    query: Query<(&PlanetData, &Transform), With<SpatialBody>>,
+    app_config: Res<AppConfig>,
+) {
+    let g = 1.;
+    let delta_seconds = 0.01;
+    let mut bodies_and_positions = query
+        .iter()
+        .map(|(bd, tfm)| (bd, tfm.translation, bd.velocity))
+        .collect::<Vec<_>>();
+
+    for _ in 0..app_config.trajectories_iterations {
+        let old_bodies_and_positions = bodies_and_positions.clone();
+
+        for i in 0..bodies_and_positions.len() {
+            for j in 0..bodies_and_positions.len() {
+                if i == j {
+                    continue;
+                }
+                bodies_and_positions[i].2 = bodies_and_positions[i].2
+                    + bodies_and_positions[i].0.compute_velocity(
+                        old_bodies_and_positions[i].1,
+                        old_bodies_and_positions[j].1,
+                        old_bodies_and_positions[j].0.mass,
+                        g,
+                        delta_seconds,
+                    );
+                bodies_and_positions[i].1 =
+                    bodies_and_positions[i].1 + bodies_and_positions[i].2 * delta_seconds;
+            }
+            gizmos.line(
+                old_bodies_and_positions[i].1,
+                bodies_and_positions[i].1,
+                Color::rgb(0.6, 0.6, 0.6),
+            )
+        }
     }
 }

@@ -6,7 +6,7 @@ pub struct PlanetBundle {
     pub planet_data: PlanetData,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct PlanetData {
     pub mass: f32,
     pub radius: f32,
@@ -22,5 +22,20 @@ impl PlanetData {
             initial_velocity,
             velocity: initial_velocity,
         }
+    }
+
+    pub fn compute_velocity(
+        &self,
+        position_1: Vec3,
+        position_2: Vec3,
+        mass_2: f32,
+        g: f32,
+        delta_seconds: f32,
+    ) -> Vec3 {
+        let sqrt_dist = position_1.distance_squared(position_2);
+        let mass = self.mass;
+        let force = (position_2 - position_1).normalize() * g * mass * mass_2 / sqrt_dist;
+
+        delta_seconds * force / mass
     }
 }
