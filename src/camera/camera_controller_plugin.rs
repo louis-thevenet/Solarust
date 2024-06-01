@@ -52,8 +52,8 @@ impl Default for CameraController {
             key_up: KeyCode::KeyE,
             key_down: KeyCode::KeyQ,
             key_run: KeyCode::ShiftLeft,
-            mouse_key_cursor_grab: MouseButton::Left,
-            keyboard_key_toggle_cursor_grab: KeyCode::KeyM,
+            mouse_key_cursor_grab: MouseButton::Right,
+            keyboard_key_toggle_cursor_grab: KeyCode::KeyC,
             walk_speed: 5.0,
             run_speed: 15.0,
             scroll_factor: 0.1,
@@ -98,10 +98,10 @@ fn run_camera_controller(
     mut windows: Query<&mut Window>,
     mut mouse_events: EventReader<MouseMotion>,
     mut scroll_events: EventReader<MouseWheel>,
-    mouse_button_input: Res<ButtonInput<MouseButton>>,
+    //mouse_button_input: Res<ButtonInput<MouseButton>>,
     key_input: Res<ButtonInput<KeyCode>>,
     mut toggle_cursor_grab: Local<bool>,
-    mut mouse_cursor_grab: Local<bool>,
+    //mut mouse_cursor_grab: Local<bool>,
     mut query: Query<(&mut Transform, &mut CameraController), With<Camera>>,
 ) {
     let dt = time.delta_seconds();
@@ -156,15 +156,17 @@ fn run_camera_controller(
             *toggle_cursor_grab = !*toggle_cursor_grab;
             cursor_grab_change = true;
         }
-        if mouse_button_input.just_pressed(controller.mouse_key_cursor_grab) {
-            *mouse_cursor_grab = true;
-            cursor_grab_change = true;
-        }
-        if mouse_button_input.just_released(controller.mouse_key_cursor_grab) {
-            *mouse_cursor_grab = false;
-            cursor_grab_change = true;
-        }
-        let cursor_grab = *mouse_cursor_grab || *toggle_cursor_grab;
+        // if mouse_button_input.just_pressed(controller.mouse_key_cursor_grab) {
+        //     *mouse_cursor_grab = true;
+        //     cursor_grab_change = true;
+        // }
+        // if mouse_button_input.just_released(controller.mouse_key_cursor_grab) {
+        //     *mouse_cursor_grab = false;
+        //     cursor_grab_change = true;
+        // }
+        //let cursor_grab = *mouse_cursor_grab || *toggle_cursor_grab;
+
+        let cursor_grab = *toggle_cursor_grab;
 
         // Apply movement update
         if axis_input != Vec3::ZERO {
