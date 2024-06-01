@@ -8,6 +8,8 @@ use bevy::{
     },
 };
 
+use crate::ui::SimulationState;
+
 use super::planet_bundle::{PlanetBundle, PlanetData};
 
 pub struct PlanetPlugin;
@@ -16,7 +18,12 @@ impl Plugin for PlanetPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(Startup, setup_test)
             .add_systems(Update, rotate)
-            .add_systems(FixedUpdate, (update_velocities, update_positions).chain());
+            .add_systems(
+                FixedUpdate,
+                (update_velocities, update_positions)
+                    .chain()
+                    .run_if(in_state(SimulationState::Running)),
+            );
     }
 }
 
