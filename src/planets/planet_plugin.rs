@@ -109,7 +109,7 @@ fn setup_test(
                 transform: Transform::from_xyz(0.0, 0.0, 0.0),
                 ..Default::default()
             },
-            planet_data: PlanetData::new(sun_mass, sun_radius, Vec3::ZERO),
+            planet_data: PlanetData::new(sun_mass, sun_radius, Vec3::ZERO, Color::YELLOW),
         },
         SpatialBody,
     ));
@@ -122,7 +122,12 @@ fn setup_test(
                 ..Default::default()
             },
 
-            planet_data: PlanetData::new(planet_mass, planet_radius, planet_initial_velocity),
+            planet_data: PlanetData::new(
+                planet_mass,
+                planet_radius,
+                planet_initial_velocity,
+                Color::BLUE,
+            ),
         },
         SpatialBody,
     ));
@@ -216,7 +221,7 @@ fn draw_trajectories(
             gizmos.line(
                 old_bodies_and_positions[i].1,
                 bodies_and_positions[i].1,
-                Color::rgb(0.6, 0.6, 0.6),
+                bodies_and_positions[i].0.color,
             )
         }
     }

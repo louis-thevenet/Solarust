@@ -12,15 +12,17 @@ pub struct PlanetData {
     pub radius: f32,
     pub initial_velocity: Vec3,
     pub velocity: Vec3,
+    pub color: Color,
 }
 
 impl PlanetData {
-    pub fn new(mass: f32, radius: f32, initial_velocity: Vec3) -> Self {
+    pub fn new(mass: f32, radius: f32, initial_velocity: Vec3, color: Color) -> Self {
         Self {
             mass,
             radius,
             initial_velocity,
             velocity: initial_velocity,
+            color,
         }
     }
 
