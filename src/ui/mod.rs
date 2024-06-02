@@ -1,7 +1,10 @@
-use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
+mod custom_perf_ui_plugin;
+mod planet_ui_plugin;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use iyes_perf_ui::prelude::*;
+use custom_perf_ui_plugin::CustomPerfUiPlugin;
+use planet_ui_plugin::PlanetUiPlugin;
+
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
 
 pub enum SimulationState {
@@ -10,11 +13,21 @@ pub enum SimulationState {
     Running,
 }
 
-#[derive(Default, Resource)]
+#[derive(Resource)]
 pub struct AppConfig {
     pub draw_velocities: bool,
     pub draw_trajectories: bool,
-    pub trajectories_iterations: usize,
+    pub trajectories_number_iterationss: usize,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            draw_velocities: true,
+            draw_trajectories: true,
+            trajectories_number_iterationss: 500,
+        }
+    }
 }
 
 pub struct UIPlugin;
@@ -23,8 +36,7 @@ impl Plugin for UIPlugin {
         app.init_resource::<AppConfig>()
             .init_state::<SimulationState>()
             .add_plugins(EguiPlugin)
-            .add_plugins((PerfUiPlugin, FrameTimeDiagnosticsPlugin))
-            .add_systems(Startup, perf_ui)
+            .add_plugins((CustomPerfUiPlugin, PlanetUiPlugin))
             .add_systems(Update, (build_ui, ui_controls));
     }
 }
@@ -55,26 +67,17 @@ fn build_ui(
             ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");
             ui.add(
-                egui::widgets::Slider::new(&mut app_config.trajectories_iterations, 1..=9999)
-                    .text("Trajectory iterations"),
+                egui::widgets::Slider::new(
+                    &mut app_config.trajectories_number_iterationss,
+                    1..=30_000,
+                )
+                .text("Trajectory iterations"),
             );
 
             if ui.button("Quit").clicked() {
                 std::process::exit(0);
             };
         });
-}
-
-fn perf_ui(mut commands: Commands) {
-    commands.spawn((
-        PerfUiRoot {
-            display_labels: false,
-            layout_horizontal: true,
-            ..default()
-        },
-        PerfUiEntryFPSWorst::default(),
-        PerfUiEntryFPS::default(),
-    ));
 }
 
 fn ui_controls(
