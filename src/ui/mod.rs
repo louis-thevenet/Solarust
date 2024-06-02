@@ -13,11 +13,21 @@ pub enum SimulationState {
     Running,
 }
 
-#[derive(Default, Resource)]
+#[derive(Resource)]
 pub struct AppConfig {
     pub draw_velocities: bool,
     pub draw_trajectories: bool,
     pub trajectories_number_iterationss: usize,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            draw_velocities: true,
+            draw_trajectories: true,
+            trajectories_number_iterationss: 500,
+        }
+    }
 }
 
 pub struct UIPlugin;
