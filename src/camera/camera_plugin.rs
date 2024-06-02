@@ -3,8 +3,10 @@ use bevy::prelude::*;
 use super::camera_controller_plugin::{CameraController, CameraControllerPlugin};
 
 #[derive(Component)]
+/// Marker component for the main camera.
 pub struct MainCamera;
 
+/// Plugin responsible for setting up the camera.
 pub struct CustomCameraPlugin;
 impl Plugin for CustomCameraPlugin {
     fn build(&self, app: &mut App) {
@@ -15,6 +17,7 @@ impl Plugin for CustomCameraPlugin {
     }
 }
 
+/// Setup the camera in a 3D scene.
 fn setup_camera(mut commands: Commands) {
     commands.spawn((
         Camera3dBundle {
