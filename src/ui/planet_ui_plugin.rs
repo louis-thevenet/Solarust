@@ -9,8 +9,11 @@ use crate::planets::planet_bundle::PlanetData;
 use crate::planets::planet_plugin::SpatialBody;
 
 #[derive(Component)]
+/// Marker component for the currently selected planet.
 struct SelectedPlanetMarker;
 
+/// Plugin responsible for displaying the planets related UI.
+/// This includes the currently selected planet's details for now.
 pub struct PlanetUiPlugin;
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
@@ -18,6 +21,7 @@ impl Plugin for PlanetUiPlugin {
     }
 }
 
+/// Clears the selected planet.
 fn clear_celection(
     commands: &mut Commands,
     selected: Result<(Entity, Mut<PlanetData>, &Transform), query::QuerySingleError>,
@@ -29,6 +33,7 @@ fn clear_celection(
             .remove::<SelectedPlanetMarker>();
     }
 }
+/// Checks if the user has clicked on a planet and selects it.
 fn check_selection(
     mut contexts: EguiContexts,
 
@@ -79,6 +84,8 @@ fn check_selection(
     }
     clear_celection(&mut commands, query_selected.get_single_mut());
 }
+
+/// Displays the selected planet's data in a floating window.
 fn display_selected_planet(
     mut contexts: EguiContexts,
     query_selected: Query<(&mut PlanetData, &Transform), With<SelectedPlanetMarker>>,

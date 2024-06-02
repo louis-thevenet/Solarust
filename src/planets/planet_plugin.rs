@@ -12,6 +12,8 @@ use crate::ui::{AppConfig, SimulationState};
 
 use super::planet_bundle::{PlanetBundle, PlanetData};
 
+/// This plugin is reponsible for setting up the planet simulation
+/// and its associated systems such as rendering and physics.
 pub struct PlanetPlugin;
 
 impl Plugin for PlanetPlugin {
@@ -30,14 +32,19 @@ impl Plugin for PlanetPlugin {
 }
 
 #[derive(Component)]
+/// This component is used to mark a planet as being part of the simulation.
 pub struct SpatialBody;
 
+/// Rotates the planets in the simulation.
+/// This is a simple way to make the planets look like they're moving.
 fn rotate(mut query: Query<&mut Transform, With<SpatialBody>>, time: Res<Time>) {
     for mut transform in &mut query {
         transform.rotate_y(time.delta_seconds() / 2.);
     }
 }
 
+/// Updates the velocities of planets by calculating their gravitational
+/// forces on each other.
 fn update_velocities(
     mut query: Query<(&mut PlanetData, &Transform), With<SpatialBody>>,
     time: Res<Time>,
@@ -67,6 +74,7 @@ fn update_velocities(
     }
 }
 
+/// Updates the positions of planets based on their velocities.
 fn update_positions(
     mut query: Query<(&PlanetData, &mut Transform), With<SpatialBody>>,
     time: Res<Time>,
@@ -76,6 +84,7 @@ fn update_positions(
     }
 }
 
+/// Sets up a simple scene.
 fn setup_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -172,10 +181,12 @@ fn uv_debug_texture() -> Image {
     )
 }
 
+/// Returns true if the app is configured to draw velocities.
 fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
     app_config.draw_velocities
 }
 
+/// Draws velocity vectors for all planets.
 fn draw_vectors(mut gizmos: Gizmos, query: Query<(&PlanetData, &Transform), With<SpatialBody>>) {
     for (planet_data, transform) in &query {
         let planet_position = transform.translation;
@@ -189,10 +200,12 @@ fn draw_vectors(mut gizmos: Gizmos, query: Query<(&PlanetData, &Transform), With
     }
 }
 
+/// Returns true if the app is configured to draw trajectories.
 fn run_if_draw_trajectories(app_config: Res<AppConfig>) -> bool {
     app_config.draw_trajectories
 }
 
+/// Draws trajectories for all planets by simulating their future positions over time.
 fn draw_trajectories(
     mut gizmos: Gizmos,
     query: Query<(&PlanetData, &Transform), With<SpatialBody>>,

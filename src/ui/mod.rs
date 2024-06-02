@@ -6,7 +6,7 @@ use custom_perf_ui_plugin::CustomPerfUiPlugin;
 use planet_ui_plugin::PlanetUiPlugin;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
-
+/// The state of the application.
 pub enum SimulationState {
     #[default]
     Paused,
@@ -14,6 +14,7 @@ pub enum SimulationState {
 }
 
 #[derive(Resource)]
+/// The configuration of the application.
 pub struct AppConfig {
     pub draw_velocities: bool,
     pub draw_trajectories: bool,
@@ -21,6 +22,7 @@ pub struct AppConfig {
 }
 
 impl Default for AppConfig {
+    /// Default configuration of the application.
     fn default() -> Self {
         Self {
             draw_velocities: true,
@@ -30,6 +32,7 @@ impl Default for AppConfig {
     }
 }
 
+/// The UI plugin of the application.
 pub struct UIPlugin;
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
@@ -41,6 +44,7 @@ impl Plugin for UIPlugin {
     }
 }
 
+/// Builds the side panel of the application.
 fn build_ui(
     mut contexts: EguiContexts,
     mut app_config: ResMut<AppConfig>,
@@ -80,6 +84,7 @@ fn build_ui(
         });
 }
 
+/// Handles controls for the simulation.
 fn ui_controls(
     keys: Res<ButtonInput<KeyCode>>,
     sim_state: Res<State<SimulationState>>,

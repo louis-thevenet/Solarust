@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
 use std::{f32::consts::*, fmt};
 
+/// Plugin responsible for controlling the camera with mouse and keyboard
 pub struct CameraControllerPlugin;
 
 impl Plugin for CameraControllerPlugin {
@@ -93,6 +94,7 @@ Freecam Controls:
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Updates  the camera's position and orientation based on user input
 fn run_camera_controller(
     time: Res<Time>,
     mut windows: Query<&mut Window>,
