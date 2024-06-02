@@ -1,6 +1,7 @@
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-
+use iyes_perf_ui::prelude::*;
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
 
 pub enum SimulationState {
@@ -22,6 +23,8 @@ impl Plugin for UIPlugin {
         app.init_resource::<AppConfig>()
             .init_state::<SimulationState>()
             .add_plugins(EguiPlugin)
+            .add_plugins((PerfUiPlugin, FrameTimeDiagnosticsPlugin))
+            .add_systems(Startup, perf_ui)
             .add_systems(Update, (build_ui, ui_controls));
     }
 }
@@ -60,6 +63,18 @@ fn build_ui(
                 std::process::exit(0);
             };
         });
+}
+
+fn perf_ui(mut commands: Commands) {
+    commands.spawn((
+        PerfUiRoot {
+            display_labels: false,
+            layout_horizontal: true,
+            ..default()
+        },
+        PerfUiEntryFPSWorst::default(),
+        PerfUiEntryFPS::default(),
+    ));
 }
 
 fn ui_controls(
