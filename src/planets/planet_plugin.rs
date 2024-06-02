@@ -198,7 +198,7 @@ fn draw_trajectories(
         .map(|(bd, tfm)| (bd, tfm.translation, bd.velocity))
         .collect::<Vec<_>>();
 
-    for _ in 0..app_config.trajectories_iterations {
+    for _ in 0..app_config.trajectories_number_iterationss {
         let old_bodies_and_positions = bodies_and_positions.clone();
 
         for i in 0..bodies_and_positions.len() {
