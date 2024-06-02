@@ -1,7 +1,7 @@
+use bevy::ecs::query;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use bevy::ecs::system::Resource;
 use bevy_egui::egui::Pos2;
 use bevy_egui::{egui, EguiContexts};
 
@@ -9,21 +9,34 @@ use crate::camera::camera_plugin::MainCamera;
 use crate::planets::planet_bundle::PlanetData;
 use crate::planets::planet_plugin::SpatialBody;
 
-#[derive(Resource, Default)]
-struct SelectedPlanet {
-    data: Option<(PlanetData, Vec3)>,
-}
+#[derive(Component)]
+struct SelectedPlanetMarker;
 
 pub struct PlanetUiPlugin;
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<SelectedPlanet>()
-            .add_systems(Update, (check_selection, display_selected_planet));
+        app.add_systems(Update, (check_selection, display_selected_planet));
+    }
+}
+
+fn clear_celection(
+    commands: &mut Commands,
+    selected: Result<(Entity, Mut<PlanetData>, &Transform), query::QuerySingleError>,
+) {
+    if let Ok((e, _, _)) = selected {
+        commands
+            .get_entity(e)
+            .unwrap()
+            .remove::<SelectedPlanetMarker>();
     }
 }
 fn check_selection(
-    mut selected_planet: ResMut<SelectedPlanet>,
-    mut query: Query<(&'static mut PlanetData, &Transform), With<SpatialBody>>,
+    mut commands: Commands,
+    mut query: Query<
+        (Entity, &mut PlanetData, &Transform),
+        (With<SpatialBody>, Without<SelectedPlanetMarker>),
+    >,
+    mut query_selected: Query<(Entity, &mut PlanetData, &Transform), With<SelectedPlanetMarker>>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
@@ -31,20 +44,18 @@ fn check_selection(
     if !mouse_button_input.just_pressed(MouseButton::Left) {
         return;
     }
-    let Some(cursor_position) = q_windows.single().cursor_position() else {
-        selected_planet.as_mut().data = None;
-        return;
-    };
-
     let (camera, camera_transform) = camera_query.single();
 
-    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-        selected_planet.as_mut().data = None;
-
+    let Some(cursor_position) = q_windows.single().cursor_position() else {
         return;
     };
 
-    for (planet, transform) in query.iter_mut() {
+    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
+        clear_celection(&mut commands, query_selected.get_single_mut());
+        return;
+    };
+
+    for (e, planet, transform) in query.iter_mut() {
         let l = ray.origin - transform.translation;
         if ray.direction.dot(l).abs() < 0. {
             continue;
@@ -57,14 +68,18 @@ fn check_selection(
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
         if d < planet.radius {
-            selected_planet.as_mut().data = Some((planet.clone(), transform.translation));
+            clear_celection(&mut commands, query_selected.get_single_mut());
+            commands.get_entity(e).unwrap().insert(SelectedPlanetMarker);
             return;
         }
     }
-    selected_planet.as_mut().data = None;
+    clear_celection(&mut commands, query_selected.get_single_mut());
 }
-fn display_selected_planet(mut contexts: EguiContexts, selected_planet: Res<SelectedPlanet>) {
-    if let Some((planet, position)) = &selected_planet.data {
+fn display_selected_planet(
+    mut contexts: EguiContexts,
+    query_selected: Query<(&mut PlanetData, &Transform), With<SelectedPlanetMarker>>,
+) {
+    if let Ok((planet, tfm)) = query_selected.get_single() {
         egui::Window::new(planet.name.clone())
             .current_pos(Pos2 { x: 0.5, y: 0. })
             .show(contexts.ctx_mut(), |ui| {
@@ -72,8 +87,8 @@ fn display_selected_planet(mut contexts: EguiContexts, selected_planet: Res<Sele
                 ui.label(&format!("Mass: {}", planet.mass));
                 ui.label(&format!(
                     "Position: ({}, {}, {})",
-                    position.x, position.y, position.z
+                    tfm.translation.x, tfm.translation.y, tfm.translation.z
                 ));
             });
-    };
+    }
 }
