@@ -2,7 +2,6 @@ use bevy::ecs::query;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
-use bevy_egui::egui::Pos2;
 use bevy_egui::{egui, EguiContexts};
 
 use crate::camera::camera_plugin::MainCamera;
@@ -31,6 +30,8 @@ fn clear_celection(
     }
 }
 fn check_selection(
+    mut contexts: EguiContexts,
+
     mut commands: Commands,
     mut query: Query<
         (Entity, &mut PlanetData, &Transform),
@@ -41,7 +42,10 @@ fn check_selection(
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
 ) {
-    if !mouse_button_input.just_pressed(MouseButton::Left) {
+    if !mouse_button_input.just_pressed(MouseButton::Left)
+        || contexts.ctx_mut().wants_pointer_input()
+        || contexts.ctx_mut().wants_keyboard_input()
+    {
         return;
     }
     let (camera, camera_transform) = camera_query.single();
@@ -80,15 +84,13 @@ fn display_selected_planet(
     query_selected: Query<(&mut PlanetData, &Transform), With<SelectedPlanetMarker>>,
 ) {
     if let Ok((planet, tfm)) = query_selected.get_single() {
-        egui::Window::new(planet.name.clone())
-            .current_pos(Pos2 { x: 0.5, y: 0. })
-            .show(contexts.ctx_mut(), |ui| {
-                ui.label(&format!("Radius: {}", planet.radius));
-                ui.label(&format!("Mass: {}", planet.mass));
-                ui.label(&format!(
-                    "Position: ({}, {}, {})",
-                    tfm.translation.x, tfm.translation.y, tfm.translation.z
-                ));
-            });
+        egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
+            ui.label(&format!("Radius: {}", planet.radius));
+            ui.label(&format!("Mass: {}", planet.mass));
+            ui.label(&format!(
+                "Position: ({}, {}, {})",
+                tfm.translation.x, tfm.translation.y, tfm.translation.z
+            ));
+        });
     }
 }
