@@ -30,7 +30,7 @@ impl Plugin for PlanetPlugin {
 }
 
 #[derive(Component)]
-struct SpatialBody;
+pub struct SpatialBody;
 
 fn rotate(mut query: Query<&mut Transform, With<SpatialBody>>, time: Res<Time>) {
     for mut transform in &mut query {
@@ -108,7 +108,13 @@ fn setup_test(
                 transform: Transform::from_xyz(0.0, 0.0, 0.0),
                 ..Default::default()
             },
-            planet_data: PlanetData::new(sun_mass, sun_radius, Vec3::ZERO, Color::YELLOW),
+            planet_data: PlanetData::new(
+                String::from("Sun"),
+                sun_mass,
+                sun_radius,
+                Vec3::ZERO,
+                Color::YELLOW,
+            ),
         },
         SpatialBody,
     ));
@@ -122,6 +128,7 @@ fn setup_test(
             },
 
             planet_data: PlanetData::new(
+                String::from("Planet"),
                 planet_mass,
                 planet_radius,
                 planet_initial_velocity,
