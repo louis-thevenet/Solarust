@@ -1,12 +1,10 @@
 use bevy::ecs::query;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-
 use bevy_egui::{egui, EguiContexts};
 
 use crate::camera::camera_plugin::MainCamera;
 use crate::planets::planet_bundle::CelestialBodyData;
-use crate::planets::planet_plugin::SpatialBody;
 
 #[derive(Component)]
 /// Marker component for the currently selected planet.
@@ -15,6 +13,7 @@ struct SelectedPlanetMarker;
 /// Plugin responsible for displaying the planets related UI.
 /// This includes the currently selected planet's details for now.
 pub struct PlanetUiPlugin;
+
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (check_selection, display_selected_planet));
@@ -33,14 +32,14 @@ fn clear_celection(
             .remove::<SelectedPlanetMarker>();
     }
 }
+
 /// Checks if the user has clicked on a planet and selects it.
 fn check_selection(
     mut contexts: EguiContexts,
-
     mut commands: Commands,
     mut query: Query<
         (Entity, &mut CelestialBodyData, &Transform),
-        (With<SpatialBody>, Without<SelectedPlanetMarker>),
+        (With<CelestialBodyData>, Without<SelectedPlanetMarker>),
     >,
     mut query_selected: Query<(Entity, &mut CelestialBodyData, &Transform), With<SelectedPlanetMarker>>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
@@ -72,7 +71,7 @@ fn check_selection(
 
         let h = ray.origin
             + ray.direction.dot(l) * ray.direction.as_dvec3().as_vec3()
-                / (ray.direction.length() * ray.direction.length());
+            / (ray.direction.length() * ray.direction.length());
 
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
