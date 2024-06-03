@@ -27,7 +27,8 @@ impl Plugin for PlanetPlugin {
                     .run_if(in_state(SimulationState::Running)),
             )
             .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
-            .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories));
+            .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories))
+            .add_systems(Update, draw_unit_vectors.run_if(run_if_draw_unit_vectors));
     }
 }
 
@@ -148,6 +149,7 @@ fn setup_test(
         ..default()
     });
 }
+
 /// Creates a colorful test pattern
 fn uv_debug_texture() -> Image {
     const TEXTURE_SIZE: usize = 8;
@@ -192,6 +194,36 @@ fn draw_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform
             body_position,
             body_position + body_velocity / body_data.radius,
             Color::YELLOW,
+        );
+    }
+}
+
+/// Returns true if the app is configured to draw velocities.
+fn run_if_draw_unit_vectors(app_config: Res<AppConfig>) -> bool {
+    app_config.draw_unit_vectors
+}
+
+/// Draws velocity vectors for all bodies.
+fn draw_unit_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>) {
+    for (body_data, transform) in &query {
+        let body_position = transform.translation;
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::X * 2. * body_data.radius,
+            Color::RED,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Y * 2. * body_data.radius,
+            Color::GREEN,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Z * 2. * body_data.radius,
+            Color::BLUE,
         );
     }
 }

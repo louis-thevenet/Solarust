@@ -1,11 +1,13 @@
-mod custom_perf_ui_plugin;
-mod planet_ui_plugin;
-
 use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
+
 use custom_perf_ui_plugin::CustomPerfUiPlugin;
 use planet_ui_plugin::PlanetUiPlugin;
+
+mod custom_perf_ui_plugin;
+mod planet_ui_plugin;
+mod move_body_plugin;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
 /// The state of the application.
@@ -21,6 +23,7 @@ pub struct AppConfig {
     pub draw_velocities: bool,
     pub draw_trajectories: bool,
     pub trajectories_number_iterationss: usize,
+    pub draw_unit_vectors: bool,
 }
 
 impl Default for AppConfig {
@@ -30,12 +33,14 @@ impl Default for AppConfig {
             draw_velocities: true,
             draw_trajectories: true,
             trajectories_number_iterationss: 500,
+            draw_unit_vectors: false,
         }
     }
 }
 
 /// The UI plugin of the application.
 pub struct UIPlugin;
+
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AppConfig>()
@@ -52,7 +57,7 @@ fn build_ui(
     mut app_config: ResMut<AppConfig>,
     sim_state: Res<State<SimulationState>>,
     mut next_sim_state: ResMut<NextState<SimulationState>>,
-    mut app_exit_events: ResMut<Events<bevy::app::AppExit>>
+    mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
 ) {
     egui::SidePanel::left("Menu")
         .resizable(true)
@@ -73,12 +78,18 @@ fn build_ui(
             }
             ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");
+
+            ui.collapsing("Debug", |ui| {
+                ui.label("XYZ=RGB");
+                ui.checkbox(&mut app_config.draw_unit_vectors, "Draw unit vectors");
+            });
+
             ui.add(
                 egui::widgets::Slider::new(
                     &mut app_config.trajectories_number_iterationss,
                     1..=30_000,
                 )
-                .text("Trajectory iterations"),
+                    .text("Trajectory iterations"),
             );
 
             if ui.button("Quit").clicked() {
