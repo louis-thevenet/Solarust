@@ -1,5 +1,7 @@
 mod custom_perf_ui_plugin;
 mod planet_ui_plugin;
+
+use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use custom_perf_ui_plugin::CustomPerfUiPlugin;
@@ -50,6 +52,7 @@ fn build_ui(
     mut app_config: ResMut<AppConfig>,
     sim_state: Res<State<SimulationState>>,
     mut next_sim_state: ResMut<NextState<SimulationState>>,
+    mut app_exit_events: ResMut<Events<bevy::app::AppExit>>
 ) {
     egui::SidePanel::left("Menu")
         .resizable(true)
@@ -79,7 +82,7 @@ fn build_ui(
             );
 
             if ui.button("Quit").clicked() {
-                std::process::exit(0);
+                app_exit_events.send(AppExit);
             };
         });
 }
