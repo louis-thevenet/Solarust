@@ -5,7 +5,7 @@ use bevy::window::PrimaryWindow;
 use bevy_egui::{egui, EguiContexts};
 
 use crate::camera::camera_plugin::MainCamera;
-use crate::planets::planet_bundle::PlanetData;
+use crate::planets::planet_bundle::CelestialBodyData;
 use crate::planets::planet_plugin::SpatialBody;
 
 #[derive(Component)]
@@ -24,7 +24,7 @@ impl Plugin for PlanetUiPlugin {
 /// Clears the selected planet.
 fn clear_celection(
     commands: &mut Commands,
-    selected: Result<(Entity, Mut<PlanetData>, &Transform), query::QuerySingleError>,
+    selected: Result<(Entity, Mut<CelestialBodyData>, &Transform), query::QuerySingleError>,
 ) {
     if let Ok((e, _, _)) = selected {
         commands
@@ -39,10 +39,10 @@ fn check_selection(
 
     mut commands: Commands,
     mut query: Query<
-        (Entity, &mut PlanetData, &Transform),
+        (Entity, &mut CelestialBodyData, &Transform),
         (With<SpatialBody>, Without<SelectedPlanetMarker>),
     >,
-    mut query_selected: Query<(Entity, &mut PlanetData, &Transform), With<SelectedPlanetMarker>>,
+    mut query_selected: Query<(Entity, &mut CelestialBodyData, &Transform), With<SelectedPlanetMarker>>,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
@@ -88,7 +88,7 @@ fn check_selection(
 /// Displays the selected planet's data in a floating window.
 fn display_selected_planet(
     mut contexts: EguiContexts,
-    query_selected: Query<(&mut PlanetData, &Transform), With<SelectedPlanetMarker>>,
+    query_selected: Query<(&mut CelestialBodyData, &Transform), With<SelectedPlanetMarker>>,
 ) {
     if let Ok((planet, tfm)) = query_selected.get_single() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {

@@ -10,9 +10,9 @@ use bevy::{
 
 use crate::ui::{AppConfig, SimulationState};
 
-use super::planet_bundle::{PlanetBundle, PlanetData};
+use super::planet_bundle::{CelestialBodyBundle, CelestialBodyData};
 
-/// This plugin is reponsible for setting up the planet simulation
+/// This plugin is responsible for setting up the simulation
 /// and its associated systems such as rendering and physics.
 pub struct PlanetPlugin;
 
@@ -32,10 +32,10 @@ impl Plugin for PlanetPlugin {
 }
 
 #[derive(Component)]
-/// This component is used to mark a planet as being part of the simulation.
+/// This component is used to mark an entity as being part of the simulation.
 pub struct SpatialBody;
 
-/// Rotates the planets in the simulation.
+/// Rotates the bodies in the simulation.
 /// This is a simple way to make the planets look like they're moving.
 fn rotate(mut query: Query<&mut Transform, With<SpatialBody>>, time: Res<Time>) {
     for mut transform in &mut query {
@@ -43,10 +43,10 @@ fn rotate(mut query: Query<&mut Transform, With<SpatialBody>>, time: Res<Time>) 
     }
 }
 
-/// Updates the velocities of planets by calculating their gravitational
+/// Updates the velocities of bodies by calculating their gravitational
 /// forces on each other.
 fn update_velocities(
-    mut query: Query<(&mut PlanetData, &Transform), With<SpatialBody>>,
+    mut query: Query<(&mut CelestialBodyData, &Transform), With<SpatialBody>>,
     time: Res<Time>,
 ) {
     let g = 1.;
@@ -74,9 +74,9 @@ fn update_velocities(
     }
 }
 
-/// Updates the positions of planets based on their velocities.
+/// Updates the positions of bodies based on their velocities.
 fn update_positions(
-    mut query: Query<(&PlanetData, &mut Transform), With<SpatialBody>>,
+    mut query: Query<(&CelestialBodyData, &mut Transform), With<SpatialBody>>,
     time: Res<Time>,
 ) {
     for (bd, mut tfm) in query.iter_mut() {
@@ -110,14 +110,14 @@ fn setup_test(
     let planet = meshes.add(Sphere::new(planet_radius).mesh().ico(5).unwrap());
 
     commands.spawn((
-        PlanetBundle {
+        CelestialBodyBundle {
             pbr: PbrBundle {
                 mesh: sun,
                 material: sun_material.clone(),
                 transform: Transform::from_xyz(0.0, 0.0, 0.0),
                 ..Default::default()
             },
-            planet_data: PlanetData::new(
+            body_data: CelestialBodyData::new(
                 String::from("Sun"),
                 sun_mass,
                 sun_radius,
@@ -128,7 +128,7 @@ fn setup_test(
         SpatialBody,
     ));
     commands.spawn((
-        PlanetBundle {
+        CelestialBodyBundle {
             pbr: PbrBundle {
                 mesh: planet,
                 material: debug_material.clone(),
@@ -136,7 +136,7 @@ fn setup_test(
                 ..Default::default()
             },
 
-            planet_data: PlanetData::new(
+            body_data: CelestialBodyData::new(
                 String::from("Planet"),
                 planet_mass,
                 planet_radius,
@@ -186,15 +186,15 @@ fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
     app_config.draw_velocities
 }
 
-/// Draws velocity vectors for all planets.
-fn draw_vectors(mut gizmos: Gizmos, query: Query<(&PlanetData, &Transform), With<SpatialBody>>) {
-    for (planet_data, transform) in &query {
-        let planet_position = transform.translation;
-        let planet_velocity = planet_data.velocity;
+/// Draws velocity vectors for all bodies.
+fn draw_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform), With<SpatialBody>>) {
+    for (body_data, transform) in &query {
+        let body_position = transform.translation;
+        let body_velocity = body_data.velocity;
 
         gizmos.arrow(
-            planet_position,
-            planet_position + planet_velocity / planet_data.radius,
+            body_position,
+            body_position + body_velocity / body_data.radius,
             Color::YELLOW,
         );
     }
@@ -205,10 +205,10 @@ fn run_if_draw_trajectories(app_config: Res<AppConfig>) -> bool {
     app_config.draw_trajectories
 }
 
-/// Draws trajectories for all planets by simulating their future positions over time.
+/// Draws trajectories for all bodies by simulating their future positions over time.
 fn draw_trajectories(
     mut gizmos: Gizmos,
-    query: Query<(&PlanetData, &Transform), With<SpatialBody>>,
+    query: Query<(&CelestialBodyData, &Transform), With<SpatialBody>>,
     app_config: Res<AppConfig>,
 ) {
     let g = 1.;

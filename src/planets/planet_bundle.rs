@@ -1,33 +1,33 @@
 use bevy::prelude::*;
 
 #[derive(Bundle)]
-/// A bundle of components for a Planet.
-pub struct PlanetBundle {
+/// A bundle of components for a CelestialBody.
+pub struct CelestialBodyBundle {
     /// Holds a mesh and a material for rendering.
     pub pbr: PbrBundle,
-    /// The planet's data.
-    pub planet_data: PlanetData,
+    /// The body's data.
+    pub body_data: CelestialBodyData,
 }
 
 #[derive(Component, Debug, Clone)]
-/// The data for a Planet
-pub struct PlanetData {
-    /// The planet's name, acts as an identifier.
+/// The data for a Body
+pub struct CelestialBodyData {
+    /// The body's name, acts as an identifier.
     pub name: String,
-    /// The planet's mass.
+    /// The body's mass.
     pub mass: f32,
-    /// The planet's radius.
+    /// The body's radius.
     pub radius: f32,
-    /// The planet's initial velocity.
+    /// The body's initial velocity.
     pub initial_velocity: Vec3,
-    /// The planet's current velocity.
+    /// The body's current velocity.
     pub velocity: Vec3,
-    /// The planet's color.
+    /// The body's color.
     pub color: Color,
 }
 
-impl PlanetData {
-    /// Constructs a new PlanetData.
+impl CelestialBodyData {
+    /// Constructs a new CelestialBodyData.
     pub fn new(name: String, mass: f32, radius: f32, initial_velocity: Vec3, color: Color) -> Self {
         Self {
             name,
@@ -39,7 +39,7 @@ impl PlanetData {
         }
     }
 
-    /// Compute de velocity contribution from another planet for a given time step.
+    /// Compute de velocity contribution from another body for a given time step.
     pub fn compute_velocity(
         &self,
         position_1: Vec3,
