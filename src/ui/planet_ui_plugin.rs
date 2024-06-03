@@ -23,7 +23,7 @@ impl Plugin for PlanetUiPlugin {
 }
 
 /// Clears the selected planet.
-fn clear_celection(
+fn clear_selection(
     commands: &mut Commands,
     selected: Result<(Entity, Mut<CelestialBodyData>, &Transform), query::QuerySingleError>,
 ) {
@@ -61,7 +61,7 @@ fn check_selection(
     };
 
     let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-        clear_celection(&mut commands, query_selected.get_single_mut());
+        //clear_selection(&mut commands, query_selected.get_single_mut());
         return;
     };
 
@@ -78,12 +78,12 @@ fn check_selection(
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
         if d < planet.radius {
-            clear_celection(&mut commands, query_selected.get_single_mut());
+            clear_selection(&mut commands, query_selected.get_single_mut());
             commands.get_entity(e).unwrap().insert(SelectedPlanetMarker);
             return;
         }
     }
-    clear_celection(&mut commands, query_selected.get_single_mut());
+    //clear_selection(&mut commands, query_selected.get_single_mut());
 }
 
 
