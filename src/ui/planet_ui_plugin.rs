@@ -90,16 +90,25 @@ fn check_selection(
 /// Displays the selected planet's data in a floating window.
 fn display_selected_planet_window(
     mut contexts: EguiContexts,
-    query_selected: Query<(&mut CelestialBodyData, &Transform), With<SelectedPlanetMarker>>,
+    mut query_selected: Query<(&mut CelestialBodyData, &mut Transform), With<SelectedPlanetMarker>>,
 ) {
-    if let Ok((planet, tfm)) = query_selected.get_single() {
+    if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
             ui.label(&format!("Radius: {}", planet.radius));
             ui.label(&format!("Mass: {}", planet.mass));
-            ui.label(&format!(
-                "Position: ({}, {}, {})",
-                tfm.translation.x, tfm.translation.y, tfm.translation.z
-            ));
+            ui.horizontal(|ui| {
+                ui.label("Position");
+                ui.add(egui::DragValue::new(&mut tfm.translation.x).prefix("x"));
+                ui.add(egui::DragValue::new(&mut tfm.translation.y));
+                ui.add(egui::DragValue::new(&mut tfm.translation.z));
+            });
+
+            ui.horizontal(|ui| {
+                ui.label("Velocity");
+                ui.add(egui::DragValue::new(&mut planet.velocity.x));
+                ui.add(egui::DragValue::new(&mut planet.velocity.y));
+                ui.add(egui::DragValue::new(&mut planet.velocity.z));
+            })
         });
     }
 }
