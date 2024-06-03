@@ -5,10 +5,11 @@ use bevy_egui::{egui, EguiContexts};
 
 use crate::camera::camera_plugin::MainCamera;
 use crate::planets::planet_bundle::CelestialBodyData;
+use crate::ui::move_body_plugin::MoveBodyUiPlugin;
 
 #[derive(Component)]
 /// Marker component for the currently selected planet.
-struct SelectedPlanetMarker;
+pub struct SelectedPlanetMarker;
 
 /// Plugin responsible for displaying the planets related UI.
 /// This includes the currently selected planet's details for now.
@@ -16,7 +17,8 @@ pub struct PlanetUiPlugin;
 
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (check_selection, display_selected_planet));
+        app.add_plugins(MoveBodyUiPlugin)
+            .add_systems(Update, (check_selection, display_selected_planet_window));
     }
 }
 
@@ -84,8 +86,9 @@ fn check_selection(
     clear_celection(&mut commands, query_selected.get_single_mut());
 }
 
+
 /// Displays the selected planet's data in a floating window.
-fn display_selected_planet(
+fn display_selected_planet_window(
     mut contexts: EguiContexts,
     query_selected: Query<(&mut CelestialBodyData, &Transform), With<SelectedPlanetMarker>>,
 ) {
