@@ -5,7 +5,6 @@ use bevy_egui::{egui, EguiContexts};
 
 use crate::camera::camera_plugin::MainCamera;
 use crate::planets::planet_bundle::CelestialBodyData;
-use crate::ui::move_body_plugin::MoveBodyUiPlugin;
 
 #[derive(Component)]
 /// Marker component for the currently selected planet.
@@ -17,8 +16,7 @@ pub struct PlanetUiPlugin;
 
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(MoveBodyUiPlugin)
-            .add_systems(Update, (check_selection, display_selected_planet_window));
+        app.add_systems(Update, (check_selection, display_selected_planet_window));
     }
 }
 
@@ -98,7 +96,7 @@ fn display_selected_planet_window(
             ui.label(&format!("Mass: {}", planet.mass));
             ui.horizontal(|ui| {
                 ui.label("Position");
-                ui.add(egui::DragValue::new(&mut tfm.translation.x).prefix("x"));
+                ui.add(egui::DragValue::new(&mut tfm.translation.x));
                 ui.add(egui::DragValue::new(&mut tfm.translation.y));
                 ui.add(egui::DragValue::new(&mut tfm.translation.z));
             });
