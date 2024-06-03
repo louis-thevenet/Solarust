@@ -10,7 +10,7 @@ use bevy::{
 
 use crate::ui::{AppConfig, SimulationState};
 
-use super::planet_bundle::{CelestialBodyBundle, CelestialBodyData};
+use super::planet_bundle::{CelestialBodyBundle, CelestialBodyData, CelestialBodyType};
 
 /// This plugin is responsible for setting up the simulation
 /// and its associated systems such as rendering and physics.
@@ -31,13 +31,9 @@ impl Plugin for PlanetPlugin {
     }
 }
 
-#[derive(Component)]
-/// This component is used to mark an entity as being part of the simulation.
-pub struct SpatialBody;
-
 /// Rotates the bodies in the simulation.
 /// This is a simple way to make the planets look like they're moving.
-fn rotate(mut query: Query<&mut Transform, With<SpatialBody>>, time: Res<Time>) {
+fn rotate(mut query: Query<&mut Transform, With<CelestialBodyData>>, time: Res<Time>) {
     for mut transform in &mut query {
         transform.rotate_y(time.delta_seconds() / 2.);
     }
@@ -46,7 +42,7 @@ fn rotate(mut query: Query<&mut Transform, With<SpatialBody>>, time: Res<Time>) 
 /// Updates the velocities of bodies by calculating their gravitational
 /// forces on each other.
 fn update_velocities(
-    mut query: Query<(&mut CelestialBodyData, &Transform), With<SpatialBody>>,
+    mut query: Query<(&mut CelestialBodyData, &Transform), With<CelestialBodyData>>,
     time: Res<Time>,
 ) {
     let g = 1.;
@@ -76,7 +72,7 @@ fn update_velocities(
 
 /// Updates the positions of bodies based on their velocities.
 fn update_positions(
-    mut query: Query<(&CelestialBodyData, &mut Transform), With<SpatialBody>>,
+    mut query: Query<(&CelestialBodyData, &mut Transform), With<CelestialBodyData>>,
     time: Res<Time>,
 ) {
     for (bd, mut tfm) in query.iter_mut() {
@@ -119,13 +115,13 @@ fn setup_test(
             },
             body_data: CelestialBodyData::new(
                 String::from("Sun"),
+                CelestialBodyType::Star(1.),
                 sun_mass,
                 sun_radius,
                 Vec3::ZERO,
                 Color::YELLOW,
             ),
         },
-        SpatialBody,
     ));
     commands.spawn((
         CelestialBodyBundle {
@@ -138,13 +134,13 @@ fn setup_test(
 
             body_data: CelestialBodyData::new(
                 String::from("Planet"),
+                CelestialBodyType::Planet,
                 planet_mass,
                 planet_radius,
                 planet_initial_velocity,
                 Color::BLUE,
             ),
         },
-        SpatialBody,
     ));
     // light
     commands.spawn(DirectionalLightBundle {
@@ -187,7 +183,7 @@ fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
 }
 
 /// Draws velocity vectors for all bodies.
-fn draw_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform), With<SpatialBody>>) {
+fn draw_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>) {
     for (body_data, transform) in &query {
         let body_position = transform.translation;
         let body_velocity = body_data.velocity;
@@ -208,7 +204,7 @@ fn run_if_draw_trajectories(app_config: Res<AppConfig>) -> bool {
 /// Draws trajectories for all bodies by simulating their future positions over time.
 fn draw_trajectories(
     mut gizmos: Gizmos,
-    query: Query<(&CelestialBodyData, &Transform), With<SpatialBody>>,
+    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
     app_config: Res<AppConfig>,
 ) {
     let g = 1.;
