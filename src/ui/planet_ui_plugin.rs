@@ -8,7 +8,7 @@ use crate::planets::planet_bundle::CelestialBodyData;
 
 #[derive(Component)]
 /// Marker component for the currently selected planet.
-struct SelectedPlanetMarker;
+pub struct SelectedPlanetMarker;
 
 /// Plugin responsible for displaying the planets related UI.
 /// This includes the currently selected planet's details for now.
@@ -16,12 +16,12 @@ pub struct PlanetUiPlugin;
 
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (check_selection, display_selected_planet));
+        app.add_systems(Update, (check_selection, display_selected_planet_window));
     }
 }
 
 /// Clears the selected planet.
-fn clear_celection(
+fn clear_selection(
     commands: &mut Commands,
     selected: Result<(Entity, Mut<CelestialBodyData>, &Transform), query::QuerySingleError>,
 ) {
@@ -59,7 +59,7 @@ fn check_selection(
     };
 
     let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-        clear_celection(&mut commands, query_selected.get_single_mut());
+        //clear_selection(&mut commands, query_selected.get_single_mut());
         return;
     };
 
@@ -76,27 +76,37 @@ fn check_selection(
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
         if d < planet.radius {
-            clear_celection(&mut commands, query_selected.get_single_mut());
+            clear_selection(&mut commands, query_selected.get_single_mut());
             commands.get_entity(e).unwrap().insert(SelectedPlanetMarker);
             return;
         }
     }
-    clear_celection(&mut commands, query_selected.get_single_mut());
+    //clear_selection(&mut commands, query_selected.get_single_mut());
 }
 
+
 /// Displays the selected planet's data in a floating window.
-fn display_selected_planet(
+fn display_selected_planet_window(
     mut contexts: EguiContexts,
-    query_selected: Query<(&mut CelestialBodyData, &Transform), With<SelectedPlanetMarker>>,
+    mut query_selected: Query<(&mut CelestialBodyData, &mut Transform), With<SelectedPlanetMarker>>,
 ) {
-    if let Ok((planet, tfm)) = query_selected.get_single() {
+    if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
             ui.label(&format!("Radius: {}", planet.radius));
             ui.label(&format!("Mass: {}", planet.mass));
-            ui.label(&format!(
-                "Position: ({}, {}, {})",
-                tfm.translation.x, tfm.translation.y, tfm.translation.z
-            ));
+            ui.horizontal(|ui| {
+                ui.label("Position");
+                ui.add(egui::DragValue::new(&mut tfm.translation.x));
+                ui.add(egui::DragValue::new(&mut tfm.translation.y));
+                ui.add(egui::DragValue::new(&mut tfm.translation.z));
+            });
+
+            ui.horizontal(|ui| {
+                ui.label("Velocity");
+                ui.add(egui::DragValue::new(&mut planet.velocity.x));
+                ui.add(egui::DragValue::new(&mut planet.velocity.y));
+                ui.add(egui::DragValue::new(&mut planet.velocity.z));
+            })
         });
     }
 }

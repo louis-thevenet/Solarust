@@ -1,11 +1,15 @@
-mod custom_perf_ui_plugin;
-mod planet_ui_plugin;
-
 use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
-use custom_perf_ui_plugin::CustomPerfUiPlugin;
+
+use debug_ui_plugin::DebugUiPlugin;
 use planet_ui_plugin::PlanetUiPlugin;
+
+use crate::camera::camera_plugin::MainCamera;
+
+mod debug_ui_plugin;
+mod planet_ui_plugin;
+mod move_body_plugin;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
 /// The state of the application.
@@ -21,6 +25,7 @@ pub struct AppConfig {
     pub draw_velocities: bool,
     pub draw_trajectories: bool,
     pub trajectories_number_iterationss: usize,
+    pub draw_unit_vectors: bool,
 }
 
 impl Default for AppConfig {
@@ -30,18 +35,20 @@ impl Default for AppConfig {
             draw_velocities: true,
             draw_trajectories: true,
             trajectories_number_iterationss: 500,
+            draw_unit_vectors: false,
         }
     }
 }
 
 /// The UI plugin of the application.
 pub struct UIPlugin;
+
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<AppConfig>()
             .init_state::<SimulationState>()
             .add_plugins(EguiPlugin)
-            .add_plugins((CustomPerfUiPlugin, PlanetUiPlugin))
+            .add_plugins((DebugUiPlugin, PlanetUiPlugin))
             .add_systems(Update, (build_ui, ui_controls));
     }
 }
@@ -52,7 +59,8 @@ fn build_ui(
     mut app_config: ResMut<AppConfig>,
     sim_state: Res<State<SimulationState>>,
     mut next_sim_state: ResMut<NextState<SimulationState>>,
-    mut app_exit_events: ResMut<Events<bevy::app::AppExit>>
+    mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
+    query_cam: Query<&Transform, With<MainCamera>>,
 ) {
     egui::SidePanel::left("Menu")
         .resizable(true)
@@ -71,15 +79,22 @@ fn build_ui(
                     }
                 }
             }
+
+            let cam = query_cam.single().translation;
+            ui.label(format!("Cam position : ({:.1}, {:.1}, {:.1})", cam.x, cam.y, cam.z));
+
             ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");
-            ui.add(
-                egui::widgets::Slider::new(
-                    &mut app_config.trajectories_number_iterationss,
-                    1..=30_000,
-                )
-                .text("Trajectory iterations"),
-            );
+
+            ui.horizontal(|ui| {
+                ui.add(egui::widgets::DragValue::new(&mut app_config.trajectories_number_iterationss).speed(100));
+                ui.label("Future trajectories steps");
+            });
+
+            ui.collapsing("Debug", |ui| {
+                ui.checkbox(&mut app_config.draw_unit_vectors, "Draw unit vectors (XYZ=RGB)");
+            });
+
 
             if ui.button("Quit").clicked() {
                 app_exit_events.send(AppExit);

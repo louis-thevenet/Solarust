@@ -1,16 +1,20 @@
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, SystemInformationDiagnosticsPlugin};
 use bevy::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use iyes_perf_ui::prelude::*;
+
 /// Plugin that adds the performance UI.
-pub struct CustomPerfUiPlugin;
-impl Plugin for CustomPerfUiPlugin {
+pub struct DebugUiPlugin;
+
+impl Plugin for DebugUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             PerfUiPlugin,
+            WorldInspectorPlugin::new(),
             FrameTimeDiagnosticsPlugin,
             SystemInformationDiagnosticsPlugin,
         ))
-        .add_systems(Startup, perf_ui);
+            .add_systems(Startup, perf_ui);
     }
 }
 
