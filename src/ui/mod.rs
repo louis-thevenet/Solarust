@@ -5,6 +5,8 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 use debug_ui_plugin::DebugUiPlugin;
 use planet_ui_plugin::PlanetUiPlugin;
 
+use crate::camera::camera_plugin::MainCamera;
+
 mod debug_ui_plugin;
 mod planet_ui_plugin;
 mod move_body_plugin;
@@ -58,6 +60,7 @@ fn build_ui(
     sim_state: Res<State<SimulationState>>,
     mut next_sim_state: ResMut<NextState<SimulationState>>,
     mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
+    query_cam: Query<&Transform, With<MainCamera>>,
 ) {
     egui::SidePanel::left("Menu")
         .resizable(true)
@@ -76,17 +79,21 @@ fn build_ui(
                     }
                 }
             }
+
+            let cam = query_cam.single().translation;
+            ui.label(format!("Cam position : ({:.1}, {:.1}, {:.1})", cam.x, cam.y, cam.z));
+
             ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");
 
-            ui.collapsing("Debug", |ui| {
-                ui.label("XYZ=RGB");
-                ui.checkbox(&mut app_config.draw_unit_vectors, "Draw unit vectors");
+            ui.horizontal(|ui| {
+                ui.add(egui::widgets::DragValue::new(&mut app_config.trajectories_number_iterationss).speed(100));
+                ui.label("Future trajectories steps");
             });
 
-                ui.label("# of iterations to compute future trajectories :");
-                ui.add(egui::widgets::DragValue::new(&mut app_config.trajectories_number_iterationss).speed(100));
-            
+            ui.collapsing("Debug", |ui| {
+                ui.checkbox(&mut app_config.draw_unit_vectors, "Draw unit vectors (XYZ=RGB)");
+            });
 
 
             if ui.button("Quit").clicked() {
