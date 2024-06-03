@@ -2,10 +2,10 @@ use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
-use custom_perf_ui_plugin::CustomPerfUiPlugin;
+use debug_ui_plugin::DebugUiPlugin;
 use planet_ui_plugin::PlanetUiPlugin;
 
-mod custom_perf_ui_plugin;
+mod debug_ui_plugin;
 mod planet_ui_plugin;
 mod move_body_plugin;
 
@@ -46,7 +46,7 @@ impl Plugin for UIPlugin {
         app.init_resource::<AppConfig>()
             .init_state::<SimulationState>()
             .add_plugins(EguiPlugin)
-            .add_plugins((CustomPerfUiPlugin, PlanetUiPlugin))
+            .add_plugins((DebugUiPlugin, PlanetUiPlugin))
             .add_systems(Update, (build_ui, ui_controls));
     }
 }
@@ -84,13 +84,10 @@ fn build_ui(
                 ui.checkbox(&mut app_config.draw_unit_vectors, "Draw unit vectors");
             });
 
-            ui.add(
-                egui::widgets::Slider::new(
-                    &mut app_config.trajectories_number_iterationss,
-                    1..=30_000,
-                )
-                    .text("Trajectory iterations"),
-            );
+                ui.label("# of iterations to compute future trajectories :");
+                ui.add(egui::widgets::DragValue::new(&mut app_config.trajectories_number_iterationss).speed(100));
+            
+
 
             if ui.button("Quit").clicked() {
                 app_exit_events.send(AppExit);
