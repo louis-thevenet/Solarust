@@ -67,7 +67,7 @@ fn check_selection(
         return;
     };
 
-    for (e, planet, transform) in query.iter_mut() {
+    for (e, planet, transform) in &mut query {
         let l = ray.origin - transform.translation;
         if ray.direction.dot(l).abs() < 0. {
             continue;

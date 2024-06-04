@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 #[derive(Bundle)]
-/// A bundle of components for a CelestialBody.
+/// A bundle of components for a `CelestialBody`.
 pub struct CelestialBodyBundle {
     /// Holds a mesh and a material for rendering.
     pub pbr: PbrBundle,
@@ -10,7 +10,7 @@ pub struct CelestialBodyBundle {
 }
 
 #[derive(Component, Debug, Clone)]
-/// Different types of CelestialBodies
+/// Different types of `CelestialBodies`
 pub enum CelestialBodyType {
     Planet,
     Star(f32),
@@ -36,7 +36,7 @@ pub struct CelestialBodyData {
 }
 
 impl CelestialBodyData {
-    /// Constructs a new CelestialBodyData.
+    /// Constructs a new `CelestialBodyData`.
     pub fn new(name: String, body_type: CelestialBodyType, mass: f32, radius: f32, initial_velocity: Vec3, color: Color) -> Self {
         Self {
             name,

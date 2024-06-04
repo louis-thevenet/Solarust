@@ -69,13 +69,13 @@ fn build_ui(
                 SimulationState::Paused => {
                     ui.heading("Paused");
                     if ui.button("Resume").clicked() {
-                        next_sim_state.set(SimulationState::Running)
+                        next_sim_state.set(SimulationState::Running);
                     }
                 }
                 SimulationState::Running => {
                     ui.heading("Running");
                     if ui.button("Pause").clicked() {
-                        next_sim_state.set(SimulationState::Paused)
+                        next_sim_state.set(SimulationState::Paused);
                     }
                 }
             }

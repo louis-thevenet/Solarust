@@ -66,7 +66,7 @@ fn update_velocities(
         operations.push_back(total_velocity_to_add);
     }
 
-    for (mut db, _) in query.iter_mut() {
+    for (mut db, _) in &mut query {
         db.velocity += operations.pop_front().unwrap();
     }
 }
@@ -76,7 +76,7 @@ fn update_positions(
     mut query: Query<(&CelestialBodyData, &mut Transform), With<CelestialBodyData>>,
     time: Res<Time>,
 ) {
-    for (bd, mut tfm) in query.iter_mut() {
+    for (bd, mut tfm) in &mut query {
         tfm.translation += bd.velocity * time.delta_seconds();
     }
 }
@@ -270,7 +270,7 @@ fn draw_trajectories(
                 old_bodies_and_positions[i].1,
                 bodies_and_positions[i].1,
                 bodies_and_positions[i].0.color,
-            )
+            );
         }
     }
 }

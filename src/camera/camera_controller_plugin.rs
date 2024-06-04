@@ -1,7 +1,7 @@
 use bevy::input::mouse::{MouseMotion, MouseScrollUnit, MouseWheel};
 use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
-use std::{f32::consts::*, fmt};
+use std::{f32::consts::PI, fmt};
 
 /// Plugin responsible for controlling the camera with mouse and keyboard
 pub struct CameraControllerPlugin;

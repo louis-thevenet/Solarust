@@ -77,7 +77,7 @@ fn draw_move_ui(
 ) {
     match selected_query.get_single() {
         Ok((tfm, body_data)) => {
-            for (mut tfm_arrow, mut visibility) in arrow_query.iter_mut() {
+            for (mut tfm_arrow, mut visibility) in &mut arrow_query {
                 tfm_arrow.translation = tfm.translation
                     + body_data.radius * tfm_arrow.rotation.mul_vec3(Vec3::X).normalize_or_zero();
                 println!("make visible on {}", tfm_arrow.translation);
@@ -85,7 +85,7 @@ fn draw_move_ui(
             }
         }
         Err(_) => {
-            for (_, mut visibility) in arrow_query.iter_mut() {
+            for (_, mut visibility) in &mut arrow_query {
                 *visibility = Hidden;
             }
         }
