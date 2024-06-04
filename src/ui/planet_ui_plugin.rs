@@ -34,6 +34,7 @@ fn clear_selection(
 }
 
 /// Checks if the user has clicked on a planet and selects it.
+#[allow(clippy::type_complexity)]
 fn check_selection(
     mut contexts: EguiContexts,
     mut commands: Commands,
@@ -41,7 +42,10 @@ fn check_selection(
         (Entity, &mut CelestialBodyData, &Transform),
         (With<CelestialBodyData>, Without<SelectedPlanetMarker>),
     >,
-    mut query_selected: Query<(Entity, &mut CelestialBodyData, &Transform), With<SelectedPlanetMarker>>,
+    mut query_selected: Query<
+        (Entity, &mut CelestialBodyData, &Transform),
+        With<SelectedPlanetMarker>,
+    >,
     mouse_button_input: Res<ButtonInput<MouseButton>>,
     camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     q_windows: Query<&Window, With<PrimaryWindow>>,
@@ -71,7 +75,7 @@ fn check_selection(
 
         let h = ray.origin
             + ray.direction.dot(l) * ray.direction.as_dvec3().as_vec3()
-            / (ray.direction.length() * ray.direction.length());
+                / (ray.direction.length() * ray.direction.length());
 
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
@@ -83,7 +87,6 @@ fn check_selection(
     }
     //clear_selection(&mut commands, query_selected.get_single_mut());
 }
-
 
 /// Displays the selected planet's data in a floating window.
 fn display_selected_planet_window(

@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
-use bevy::prelude::*;
 use bevy::prelude::Visibility::{Hidden, Visible};
+use bevy::prelude::*;
 
 use crate::planets::planet_bundle::CelestialBodyData;
 use crate::ui::planet_ui_plugin::SelectedPlanetMarker;
@@ -21,7 +21,6 @@ impl Plugin for MoveBodyUiPlugin {
 fn build_move_ui(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let arrow_mesh = meshes.add(Cuboid::new(10.0, 1.0, 1.0).mesh());
@@ -31,16 +30,16 @@ fn build_move_ui(
     });
 
     // -> Y
-    commands.spawn(
-        (PbrBundle {
+    commands.spawn((
+        PbrBundle {
             mesh: arrow_mesh.clone(),
             material: arrow_mat.clone(),
             visibility: Visibility::Hidden,
             transform: Transform::from_rotation(Quat::from_axis_angle(Vec3::Z, PI / 2.)),
             ..default()
         },
-         ArrowMarker)
-    );
+        ArrowMarker,
+    ));
 
     // -> X
     commands.spawn((
@@ -56,40 +55,37 @@ fn build_move_ui(
     ));
 
     // -> Z
-    commands.spawn(
-        (PbrBundle {
+    commands.spawn((
+        PbrBundle {
             mesh: arrow_mesh.clone(),
             material: arrow_mat.clone(),
             visibility: Visibility::Hidden,
             transform: Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, -PI / 2.)),
             ..default()
         },
-         ArrowMarker)
-    );
+        ArrowMarker,
+    ));
 }
 
+#[allow(clippy::type_complexity)]
 fn draw_move_ui(
     selected_query: Query<
         (&Transform, &CelestialBodyData),
         (With<SelectedPlanetMarker>, Without<ArrowMarker>),
     >,
-    mut arrow_query: Query<(&mut Transform, &mut Visibility, &ArrowMarker)>,
+    mut arrow_query: Query<(&mut Transform, &mut Visibility), With<ArrowMarker>>,
 ) {
     match selected_query.get_single() {
         Ok((tfm, body_data)) => {
-            for (mut tfm_arrow, mut visibility, dir) in arrow_query.iter_mut() {
+            for (mut tfm_arrow, mut visibility) in arrow_query.iter_mut() {
                 tfm_arrow.translation = tfm.translation
-                    + body_data.radius
-                    * tfm_arrow
-                    .rotation
-                    .mul_vec3(Vec3::X)
-                    .normalize_or_zero();
+                    + body_data.radius * tfm_arrow.rotation.mul_vec3(Vec3::X).normalize_or_zero();
                 println!("make visible on {}", tfm_arrow.translation);
                 *visibility = Visible;
             }
         }
         Err(_) => {
-            for (_, mut visibility, _) in arrow_query.iter_mut() {
+            for (_, mut visibility) in arrow_query.iter_mut() {
                 *visibility = Hidden;
             }
         }
