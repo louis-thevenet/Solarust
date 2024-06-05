@@ -4,6 +4,7 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
 use debug_ui_plugin::DebugUiPlugin;
 use planet_ui_plugin::PlanetUiPlugin;
+use crate::camera::camera_controller_plugin::CameraController;
 
 use crate::camera::camera_plugin::MainCamera;
 
@@ -83,7 +84,10 @@ fn build_ui(
             }
 
             let cam = query_cam.single().translation;
+
             ui.label(format!("Cam position : ({:.1}, {:.1}, {:.1})", cam.x, cam.y, cam.z));
+            ui.label(format!("{}",CameraController::default()));
+            
 
             if ui.button("Add new planet").clicked() {
                 app_config.add_new_planet = true;
