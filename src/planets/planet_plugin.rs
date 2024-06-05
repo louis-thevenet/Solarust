@@ -274,8 +274,7 @@ fn run_if_add_new_planet(app_config: Res<AppConfig>) -> bool {
 fn add_new_planet(mut app_config: ResMut<AppConfig>, mut commands: Commands,
                   selected_query: Query<
                       (&Transform, &Handle<Mesh>, &CelestialBodyData),
-                      (With<crate::ui::planet_ui_plugin::SelectedPlanetMarker>)>,
-                  mut images: ResMut<Assets<Image>>,
+                      With<crate::ui::planet_ui_plugin::SelectedPlanetMarker>>,
                   mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let color = Color::rgb_from_array([rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>()]);
@@ -292,7 +291,7 @@ fn add_new_planet(mut app_config: ResMut<AppConfig>, mut commands: Commands,
             CelestialBodyBundle {
                 pbr: PbrBundle {
                     mesh: mesh.clone(),
-                    material: material,
+                    material,
                     transform: Transform {
                         translation: tfm.translation + Vec3::ONE * data.radius,
                         scale: Vec3::ONE * data.radius,
