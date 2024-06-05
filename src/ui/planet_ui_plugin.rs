@@ -96,34 +96,32 @@ fn display_selected_planet_window(
     if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
             ui.horizontal(|ui| {
-                ui.label("Radius");
                 ui.add(egui::DragValue::new(&mut planet.radius));
+                ui.label("Radius");
             });
 
             ui.horizontal(|ui| {
                 let speed = (planet.mass / 10.0 + 1.0).abs();
-                ui.label("Mass");
                 ui.add(egui::DragValue::new(&mut planet.mass).speed(speed));
+                ui.label("Mass");
             });
 
+            ui.add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32).text("Red"));
+            ui.add(egui::Slider::new(&mut planet.color[1], 0.0_f32..=1.0_f32).text("Green"));
+            ui.add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32).text("Blue"));
+
             ui.horizontal(|ui| {
-                ui.label("Color");
-                ui.add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32));
-                ui.add(egui::Slider::new(&mut planet.color[1], 0.0_f32..=1.0_f32));
-                ui.add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32));
-            });
-            ui.horizontal(|ui| {
-                ui.label("Position");
                 ui.add(egui::DragValue::new(&mut tfm.translation.x));
                 ui.add(egui::DragValue::new(&mut tfm.translation.y));
                 ui.add(egui::DragValue::new(&mut tfm.translation.z));
+                ui.label("Position");
             });
 
             ui.horizontal(|ui| {
-                ui.label("Velocity");
                 ui.add(egui::DragValue::new(&mut planet.velocity.x));
                 ui.add(egui::DragValue::new(&mut planet.velocity.y));
                 ui.add(egui::DragValue::new(&mut planet.velocity.z));
+                ui.label("Velocity");
             })
         });
     }

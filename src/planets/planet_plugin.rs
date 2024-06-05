@@ -327,7 +327,7 @@ fn draw_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform
 
         gizmos.arrow(
             body_position,
-            body_position + body_velocity / body_data.radius,
+            body_position + 2. * body_velocity / body_data.radius,
             Color::YELLOW,
         );
     }
