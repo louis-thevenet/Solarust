@@ -8,7 +8,7 @@ use planet_ui_plugin::PlanetUiPlugin;
 use crate::camera::camera_plugin::MainCamera;
 
 mod debug_ui_plugin;
-mod planet_ui_plugin;
+pub(crate) mod planet_ui_plugin;
 mod move_body_plugin;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
@@ -26,6 +26,7 @@ pub struct AppConfig {
     pub draw_trajectories: bool,
     pub trajectories_number_iterationss: usize,
     pub draw_unit_vectors: bool,
+    pub add_new_planet: bool,
 }
 
 impl Default for AppConfig {
@@ -36,6 +37,7 @@ impl Default for AppConfig {
             draw_trajectories: true,
             trajectories_number_iterationss: 500,
             draw_unit_vectors: false,
+            add_new_planet: false,
         }
     }
 }
@@ -82,6 +84,10 @@ fn build_ui(
 
             let cam = query_cam.single().translation;
             ui.label(format!("Cam position : ({:.1}, {:.1}, {:.1})", cam.x, cam.y, cam.z));
+
+            if ui.button("Add new planet").clicked() {
+                app_config.add_new_planet = true;
+            };
 
             ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");

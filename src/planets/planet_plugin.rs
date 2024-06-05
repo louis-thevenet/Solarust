@@ -26,11 +26,13 @@ impl Plugin for PlanetPlugin {
                     .chain()
                     .run_if(in_state(SimulationState::Running)),
             ).add_systems(Update, radius_changed)
+            .add_systems(Update, add_new_planet.run_if(run_if_add_new_planet))
             .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
             .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories))
             .add_systems(Update, draw_unit_vectors.run_if(run_if_draw_unit_vectors));
     }
 }
+
 
 /// Rotates the bodies in the simulation.
 /// This is a simple way to make the planets look like they're moving.
@@ -166,7 +168,7 @@ fn setup_mutual(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let sun_material = materials.add(StandardMaterial {
-        alpha_mode: AlphaMode::Mask(0.0),
+        base_color: Color::YELLOW,
         ..Default::default()
     });
 
@@ -265,6 +267,54 @@ fn uv_debug_texture() -> Image {
     )
 }
 
+fn run_if_add_new_planet(app_config: Res<AppConfig>) -> bool {
+    app_config.add_new_planet
+}
+
+fn add_new_planet(mut app_config: ResMut<AppConfig>, mut commands: Commands,
+                  selected_query: Query<
+                      (&Transform, &Handle<Mesh>, &CelestialBodyData),
+                      (With<crate::ui::planet_ui_plugin::SelectedPlanetMarker>)>,
+                  mut images: ResMut<Assets<Image>>,
+                  mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let color = Color::rgb_from_array([rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>()]);
+    let material = materials.add(StandardMaterial {
+        base_color: color,
+        ..Default::default()
+    });
+
+
+    app_config.add_new_planet = false;
+
+    if let Ok((tfm, mesh, data)) = selected_query.get_single() {
+        commands.spawn((
+            CelestialBodyBundle {
+                pbr: PbrBundle {
+                    mesh: mesh.clone(),
+                    material: material,
+                    transform: Transform {
+                        translation: tfm.translation + Vec3::ONE * data.radius,
+                        scale: Vec3::ONE * data.radius,
+                        ..default()
+                    },
+                    ..Default::default()
+                },
+
+                body_data: CelestialBodyData::new(
+                    String::from("Planet"),
+                    CelestialBodyType::Planet,
+                    data.mass,
+                    data.radius,
+                    data.velocity,
+                    color,
+                ),
+            },
+        ));
+    }
+}
+
+
 /// Returns true if the app is configured to draw velocities.
 fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
     app_config.draw_velocities
@@ -355,7 +405,7 @@ fn draw_trajectories(
             gizmos.line(
                 old_bodies_and_positions[i].1,
                 bodies_and_positions[i].1,
-                bodies_and_positions[i].0.color,
+                Color::rgb_from_array(bodies_and_positions[i].0.color),
             );
         }
     }

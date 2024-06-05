@@ -107,6 +107,12 @@ fn display_selected_planet_window(
             });
 
             ui.horizontal(|ui| {
+                ui.label("Color");
+                ui.add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32));
+                ui.add(egui::Slider::new(&mut planet.color[1], 0.0_f32..=1.0_f32));
+                ui.add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32));
+            });
+            ui.horizontal(|ui| {
                 ui.label("Position");
                 ui.add(egui::DragValue::new(&mut tfm.translation.x));
                 ui.add(egui::DragValue::new(&mut tfm.translation.y));

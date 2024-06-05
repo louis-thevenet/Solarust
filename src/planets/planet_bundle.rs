@@ -32,7 +32,7 @@ pub struct CelestialBodyData {
     /// The body's current velocity.
     pub velocity: Vec3,
     /// The body's color.
-    pub color: Color,
+    pub color: [f32; 3],
 }
 
 impl CelestialBodyData {
@@ -45,7 +45,7 @@ impl CelestialBodyData {
             radius,
             initial_velocity,
             velocity: initial_velocity,
-            color,
+            color: color.rgb_linear_to_vec3().to_array(),
         }
     }
 
