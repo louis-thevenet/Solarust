@@ -75,7 +75,7 @@ fn check_selection(
 
         let h = ray.origin
             + ray.direction.dot(l) * ray.direction.as_dvec3().as_vec3()
-                / (ray.direction.length() * ray.direction.length());
+            / (ray.direction.length() * ray.direction.length());
 
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
@@ -95,8 +95,17 @@ fn display_selected_planet_window(
 ) {
     if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
-            ui.label(&format!("Radius: {}", planet.radius));
-            ui.label(&format!("Mass: {}", planet.mass));
+            ui.horizontal(|ui| {
+                ui.label("Radius");
+                ui.add(egui::DragValue::new(&mut planet.radius));
+            });
+
+            ui.horizontal(|ui| {
+                let speed = (planet.mass / 10.0 + 1.0).abs();
+                ui.label("Mass");
+                ui.add(egui::DragValue::new(&mut planet.mass).speed(speed));
+            });
+
             ui.horizontal(|ui| {
                 ui.label("Position");
                 ui.add(egui::DragValue::new(&mut tfm.translation.x));

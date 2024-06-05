@@ -18,14 +18,14 @@ pub struct PlanetPlugin;
 
 impl Plugin for PlanetPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_systems(Startup, setup_test)
+        app.add_systems(Startup, setup_mutual)
             .add_systems(Update, rotate)
             .add_systems(
                 FixedUpdate,
                 (update_velocities, update_positions)
                     .chain()
                     .run_if(in_state(SimulationState::Running)),
-            )
+            ).add_systems(Update, radius_changed)
             .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
             .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories))
             .add_systems(Update, draw_unit_vectors.run_if(run_if_draw_unit_vectors));
@@ -103,15 +103,19 @@ fn setup_test(
     let sun_radius = 10.0;
     let planet_radius = sun_radius * 0.3;
     let planet_initial_velocity = Vec3::new(0., 0., 100.);
-    let sun = meshes.add(Sphere::new(sun_radius).mesh().ico(5).unwrap());
-    let planet = meshes.add(Sphere::new(planet_radius).mesh().ico(5).unwrap());
+    let sun = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
+    let planet = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
 
     commands.spawn((
         CelestialBodyBundle {
             pbr: PbrBundle {
                 mesh: sun,
                 material: sun_material.clone(),
-                transform: Transform::from_xyz(0.0, 0.0, 0.0),
+                transform: Transform {
+                    translation: Default::default(),
+                    rotation: Default::default(),
+                    scale: Vec3::ONE * sun_radius,
+                },
                 ..Default::default()
             },
             body_data: CelestialBodyData::new(
@@ -129,7 +133,11 @@ fn setup_test(
             pbr: PbrBundle {
                 mesh: planet,
                 material: debug_material.clone(),
-                transform: Transform::from_xyz(100.0, 0.0, 0.0),
+                transform: Transform {
+                    translation: Vec3::new(100.0, 0.0, 0.0),
+                    scale: Vec3::ONE * planet_radius,
+                    ..default()
+                },
                 ..Default::default()
             },
 
@@ -149,6 +157,84 @@ fn setup_test(
         ..default()
     });
 }
+
+/// Sets up a simple scene.
+fn setup_mutual(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let sun_material = materials.add(StandardMaterial {
+        alpha_mode: AlphaMode::Mask(0.0),
+        ..Default::default()
+    });
+
+    let debug_material = materials.add(StandardMaterial {
+        base_color_texture: Some(images.add(uv_debug_texture())),
+        ..default()
+    });
+
+    let sun_mass = 1.0e6;
+    let planet_mass = 1.0e6;
+    let sun_radius = 10.0;
+    let planet_radius = sun_radius;
+    let planet_initial_velocity = Vec3::new(0., 0., 100.);
+    let sun = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
+    let planet = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
+
+    commands.spawn((
+        CelestialBodyBundle {
+            pbr: PbrBundle {
+                mesh: sun,
+                material: sun_material.clone(),
+                transform: Transform {
+                    translation: Vec3::new(0., 0., 0.),
+                    rotation: Default::default(),
+                    scale: Vec3::ONE * sun_radius,
+                },
+                ..Default::default()
+            },
+            body_data: CelestialBodyData::new(
+                String::from("Sun"),
+                CelestialBodyType::Star(1.),
+                sun_mass,
+                sun_radius,
+                Vec3::ZERO,
+                Color::YELLOW,
+            ),
+        },
+    ));
+    commands.spawn((
+        CelestialBodyBundle {
+            pbr: PbrBundle {
+                mesh: planet,
+                material: debug_material.clone(),
+                transform: Transform {
+                    translation: Vec3::new(100.0, 0.0, 0.0),
+                    scale: Vec3::ONE * planet_radius,
+                    ..default()
+                },
+                ..Default::default()
+            },
+
+            body_data: CelestialBodyData::new(
+                String::from("Planet"),
+                CelestialBodyType::Planet,
+                planet_mass,
+                planet_radius,
+                planet_initial_velocity,
+                Color::BLUE,
+            ),
+        },
+    ));
+    // light
+    commands.spawn(DirectionalLightBundle {
+        transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
+        ..default()
+    });
+}
+
 
 /// Creates a colorful test pattern
 fn uv_debug_texture() -> Image {
@@ -272,5 +358,14 @@ fn draw_trajectories(
                 bodies_and_positions[i].0.color,
             );
         }
+    }
+}
+
+/// detect new enemies and print their health
+fn radius_changed(
+    mut query: Query<(&mut Transform, &CelestialBodyData), Changed<CelestialBodyData>>
+) {
+    for (mut tfm, data) in &mut query {
+        tfm.scale = Vec3::ONE * data.radius
     }
 }
