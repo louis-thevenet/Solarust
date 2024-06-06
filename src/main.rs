@@ -1,6 +1,6 @@
 use bevy::prelude::*;
-use camera::camera_plugin::CustomCameraPlugin;
-use planets::planet_plugin::PlanetPlugin;
+use camera::CustomCameraPlugin;
+use planets::PlanetPlugin;
 use ui::UIPlugin;
 mod camera;
 mod planets;
