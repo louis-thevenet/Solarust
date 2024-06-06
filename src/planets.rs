@@ -84,6 +84,7 @@ fn update_positions(
 }
 
 /// Sets up a simple scene.
+#[allow(unused)]
 fn setup_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
