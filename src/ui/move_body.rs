@@ -4,7 +4,7 @@ use bevy::prelude::Visibility::{Hidden, Visible};
 use bevy::prelude::*;
 
 use crate::planets::planet_bundle::CelestialBodyData;
-use crate::ui::planet_ui_plugin::SelectedPlanetMarker;
+use crate::ui::planet_ui::SelectedPlanetMarker;
 
 #[derive(Component)]
 struct ArrowMarker;

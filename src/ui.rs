@@ -1,16 +1,14 @@
+mod perf_ui;
+
+pub(crate) mod planet_ui;
+
 use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
-use debug_ui_plugin::DebugUiPlugin;
-use planet_ui_plugin::PlanetUiPlugin;
-use crate::camera::camera_controller_plugin::CameraController;
-
-use crate::camera::camera_plugin::MainCamera;
-
-mod debug_ui_plugin;
-pub(crate) mod planet_ui_plugin;
-mod move_body_plugin;
+use crate::camera::{camera_controller::CameraController, MainCamera};
+use perf_ui::DebugUiPlugin;
+use planet_ui::PlanetUiPlugin;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
 /// The state of the application.
@@ -85,9 +83,11 @@ fn build_ui(
 
             let cam = query_cam.single().translation;
 
-            ui.label(format!("Cam position : ({:.1}, {:.1}, {:.1})", cam.x, cam.y, cam.z));
-            ui.label(format!("{}",CameraController::default()));
-            
+            ui.label(format!(
+                "Cam position : ({:.1}, {:.1}, {:.1})",
+                cam.x, cam.y, cam.z
+            ));
+            ui.label(format!("{}", CameraController::default()));
 
             if ui.button("Add new planet").clicked() {
                 app_config.add_new_planet = true;
@@ -97,14 +97,19 @@ fn build_ui(
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");
 
             ui.horizontal(|ui| {
-                ui.add(egui::widgets::DragValue::new(&mut app_config.trajectories_number_iterationss).speed(100));
+                ui.add(
+                    egui::widgets::DragValue::new(&mut app_config.trajectories_number_iterationss)
+                        .speed(100),
+                );
                 ui.label("Future trajectories steps");
             });
 
             ui.collapsing("Debug", |ui| {
-                ui.checkbox(&mut app_config.draw_unit_vectors, "Draw unit vectors (XYZ=RGB)");
+                ui.checkbox(
+                    &mut app_config.draw_unit_vectors,
+                    "Draw unit vectors (XYZ=RGB)",
+                );
             });
-
 
             if ui.button("Quit").clicked() {
                 app_exit_events.send(AppExit);

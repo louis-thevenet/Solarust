@@ -1,3 +1,4 @@
+pub mod planet_bundle;
 use std::collections::VecDeque;
 
 use bevy::{
@@ -7,10 +8,9 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
     },
 };
+use planet_bundle::{CelestialBodyBundle, CelestialBodyData, CelestialBodyType};
 
 use crate::ui::{AppConfig, SimulationState};
-
-use super::planet_bundle::{CelestialBodyBundle, CelestialBodyData, CelestialBodyType};
 
 /// This plugin is responsible for setting up the simulation
 /// and its associated systems such as rendering and physics.
@@ -25,14 +25,14 @@ impl Plugin for PlanetPlugin {
                 (update_velocities, update_positions)
                     .chain()
                     .run_if(in_state(SimulationState::Running)),
-            ).add_systems(Update, radius_changed)
+            )
+            .add_systems(Update, radius_changed)
             .add_systems(Update, add_new_planet.run_if(run_if_add_new_planet))
             .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
             .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories))
             .add_systems(Update, draw_unit_vectors.run_if(run_if_draw_unit_vectors));
     }
 }
-
 
 /// Rotates the bodies in the simulation.
 /// This is a simple way to make the planets look like they're moving.
@@ -84,6 +84,7 @@ fn update_positions(
 }
 
 /// Sets up a simple scene.
+#[allow(unused)]
 fn setup_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -108,51 +109,47 @@ fn setup_test(
     let sun = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
     let planet = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
 
-    commands.spawn((
-        CelestialBodyBundle {
-            pbr: PbrBundle {
-                mesh: sun,
-                material: sun_material.clone(),
-                transform: Transform {
-                    translation: Default::default(),
-                    rotation: Default::default(),
-                    scale: Vec3::ONE * sun_radius,
-                },
-                ..Default::default()
+    commands.spawn((CelestialBodyBundle {
+        pbr: PbrBundle {
+            mesh: sun,
+            material: sun_material.clone(),
+            transform: Transform {
+                translation: Default::default(),
+                rotation: Default::default(),
+                scale: Vec3::ONE * sun_radius,
             },
-            body_data: CelestialBodyData::new(
-                String::from("Sun"),
-                CelestialBodyType::Star(1.),
-                sun_mass,
-                sun_radius,
-                Vec3::ZERO,
-                Color::YELLOW,
-            ),
+            ..Default::default()
         },
-    ));
-    commands.spawn((
-        CelestialBodyBundle {
-            pbr: PbrBundle {
-                mesh: planet,
-                material: debug_material.clone(),
-                transform: Transform {
-                    translation: Vec3::new(100.0, 0.0, 0.0),
-                    scale: Vec3::ONE * planet_radius,
-                    ..default()
-                },
-                ..Default::default()
+        body_data: CelestialBodyData::new(
+            String::from("Sun"),
+            CelestialBodyType::Star(1.),
+            sun_mass,
+            sun_radius,
+            Vec3::ZERO,
+            Color::YELLOW,
+        ),
+    },));
+    commands.spawn((CelestialBodyBundle {
+        pbr: PbrBundle {
+            mesh: planet,
+            material: debug_material.clone(),
+            transform: Transform {
+                translation: Vec3::new(100.0, 0.0, 0.0),
+                scale: Vec3::ONE * planet_radius,
+                ..default()
             },
+            ..Default::default()
+        },
 
-            body_data: CelestialBodyData::new(
-                String::from("Planet"),
-                CelestialBodyType::Planet,
-                planet_mass,
-                planet_radius,
-                planet_initial_velocity,
-                Color::BLUE,
-            ),
-        },
-    ));
+        body_data: CelestialBodyData::new(
+            String::from("Planet"),
+            CelestialBodyType::Planet,
+            planet_mass,
+            planet_radius,
+            planet_initial_velocity,
+            Color::BLUE,
+        ),
+    },));
     // light
     commands.spawn(DirectionalLightBundle {
         transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
@@ -185,58 +182,53 @@ fn setup_mutual(
     let sun = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
     let planet = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
 
-    commands.spawn((
-        CelestialBodyBundle {
-            pbr: PbrBundle {
-                mesh: sun,
-                material: sun_material.clone(),
-                transform: Transform {
-                    translation: Vec3::new(0., 0., 0.),
-                    rotation: Default::default(),
-                    scale: Vec3::ONE * sun_radius,
-                },
-                ..Default::default()
+    commands.spawn((CelestialBodyBundle {
+        pbr: PbrBundle {
+            mesh: sun,
+            material: sun_material.clone(),
+            transform: Transform {
+                translation: Vec3::new(0., 0., 0.),
+                rotation: Default::default(),
+                scale: Vec3::ONE * sun_radius,
             },
-            body_data: CelestialBodyData::new(
-                String::from("Sun"),
-                CelestialBodyType::Star(1.),
-                sun_mass,
-                sun_radius,
-                Vec3::ZERO,
-                Color::YELLOW,
-            ),
+            ..Default::default()
         },
-    ));
-    commands.spawn((
-        CelestialBodyBundle {
-            pbr: PbrBundle {
-                mesh: planet,
-                material: debug_material.clone(),
-                transform: Transform {
-                    translation: Vec3::new(100.0, 0.0, 0.0),
-                    scale: Vec3::ONE * planet_radius,
-                    ..default()
-                },
-                ..Default::default()
+        body_data: CelestialBodyData::new(
+            String::from("Sun"),
+            CelestialBodyType::Star(1.),
+            sun_mass,
+            sun_radius,
+            Vec3::ZERO,
+            Color::YELLOW,
+        ),
+    },));
+    commands.spawn((CelestialBodyBundle {
+        pbr: PbrBundle {
+            mesh: planet,
+            material: debug_material.clone(),
+            transform: Transform {
+                translation: Vec3::new(100.0, 0.0, 0.0),
+                scale: Vec3::ONE * planet_radius,
+                ..default()
             },
+            ..Default::default()
+        },
 
-            body_data: CelestialBodyData::new(
-                String::from("Planet"),
-                CelestialBodyType::Planet,
-                planet_mass,
-                planet_radius,
-                planet_initial_velocity,
-                Color::BLUE,
-            ),
-        },
-    ));
+        body_data: CelestialBodyData::new(
+            String::from("Planet"),
+            CelestialBodyType::Planet,
+            planet_mass,
+            planet_radius,
+            planet_initial_velocity,
+            Color::BLUE,
+        ),
+    },));
     // light
     commands.spawn(DirectionalLightBundle {
         transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 }
-
 
 /// Creates a colorful test pattern
 fn uv_debug_texture() -> Image {
@@ -271,48 +263,51 @@ fn run_if_add_new_planet(app_config: Res<AppConfig>) -> bool {
     app_config.add_new_planet
 }
 
-fn add_new_planet(mut app_config: ResMut<AppConfig>, mut commands: Commands,
-                  selected_query: Query<
-                      (&Transform, &Handle<Mesh>, &CelestialBodyData),
-                      With<crate::ui::planet_ui_plugin::SelectedPlanetMarker>>,
-                  mut materials: ResMut<Assets<StandardMaterial>>,
+fn add_new_planet(
+    mut app_config: ResMut<AppConfig>,
+    mut commands: Commands,
+    selected_query: Query<
+        (&Transform, &Handle<Mesh>, &CelestialBodyData),
+        With<crate::ui::planet_ui::SelectedPlanetMarker>,
+    >,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let color = Color::rgb_from_array([rand::random::<f32>(), rand::random::<f32>(), rand::random::<f32>()]);
+    let color = Color::rgb_from_array([
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+    ]);
     let material = materials.add(StandardMaterial {
         base_color: color,
         ..Default::default()
     });
 
-
     app_config.add_new_planet = false;
 
     if let Ok((tfm, mesh, data)) = selected_query.get_single() {
-        commands.spawn((
-            CelestialBodyBundle {
-                pbr: PbrBundle {
-                    mesh: mesh.clone(),
-                    material,
-                    transform: Transform {
-                        translation: tfm.translation + Vec3::ONE * data.radius,
-                        scale: Vec3::ONE * data.radius,
-                        ..default()
-                    },
-                    ..Default::default()
+        commands.spawn((CelestialBodyBundle {
+            pbr: PbrBundle {
+                mesh: mesh.clone(),
+                material,
+                transform: Transform {
+                    translation: tfm.translation + Vec3::ONE * data.radius,
+                    scale: Vec3::ONE * data.radius,
+                    ..default()
                 },
-
-                body_data: CelestialBodyData::new(
-                    String::from("Planet"),
-                    CelestialBodyType::Planet,
-                    data.mass,
-                    data.radius,
-                    data.velocity,
-                    color,
-                ),
+                ..Default::default()
             },
-        ));
+
+            body_data: CelestialBodyData::new(
+                String::from("Planet"),
+                CelestialBodyType::Planet,
+                data.mass,
+                data.radius,
+                data.velocity,
+                color,
+            ),
+        },));
     }
 }
-
 
 /// Returns true if the app is configured to draw velocities.
 fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
@@ -320,7 +315,10 @@ fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
 }
 
 /// Draws velocity vectors for all bodies.
-fn draw_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>) {
+fn draw_vectors(
+    mut gizmos: Gizmos,
+    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
+) {
     for (body_data, transform) in &query {
         let body_position = transform.translation;
         let body_velocity = body_data.velocity;
@@ -339,7 +337,10 @@ fn run_if_draw_unit_vectors(app_config: Res<AppConfig>) -> bool {
 }
 
 /// Draws velocity vectors for all bodies.
-fn draw_unit_vectors(mut gizmos: Gizmos, query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>) {
+fn draw_unit_vectors(
+    mut gizmos: Gizmos,
+    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
+) {
     for (body_data, transform) in &query {
         let body_position = transform.translation;
 
@@ -412,7 +413,7 @@ fn draw_trajectories(
 
 /// detect new enemies and print their health
 fn radius_changed(
-    mut query: Query<(&mut Transform, &CelestialBodyData), Changed<CelestialBodyData>>
+    mut query: Query<(&mut Transform, &CelestialBodyData), Changed<CelestialBodyData>>,
 ) {
     for (mut tfm, data) in &mut query {
         tfm.scale = Vec3::ONE * data.radius

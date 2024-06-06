@@ -1,6 +1,6 @@
+pub(crate) mod camera_controller;
 use bevy::prelude::*;
-
-use super::camera_controller_plugin::{CameraController, CameraControllerPlugin};
+use camera_controller::{CameraController, CameraControllerPlugin};
 
 #[derive(Component)]
 /// Marker component for the main camera.

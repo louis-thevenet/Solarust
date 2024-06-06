@@ -3,8 +3,7 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy_egui::{egui, EguiContexts};
 
-use crate::camera::camera_plugin::MainCamera;
-use crate::planets::planet_bundle::CelestialBodyData;
+use crate::{camera::MainCamera, planets::planet_bundle::CelestialBodyData};
 
 #[derive(Component)]
 /// Marker component for the currently selected planet.
@@ -75,7 +74,7 @@ fn check_selection(
 
         let h = ray.origin
             + ray.direction.dot(l) * ray.direction.as_dvec3().as_vec3()
-            / (ray.direction.length() * ray.direction.length());
+                / (ray.direction.length() * ray.direction.length());
 
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
