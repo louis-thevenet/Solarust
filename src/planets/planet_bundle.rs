@@ -9,7 +9,7 @@ pub struct CelestialBodyBundle {
     pub body_data: CelestialBodyData,
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, PartialEq)]
 /// Different types of `CelestialBodies`
 pub enum CelestialBodyType {
     Planet,
@@ -37,7 +37,14 @@ pub struct CelestialBodyData {
 
 impl CelestialBodyData {
     /// Constructs a new `CelestialBodyData`.
-    pub fn new(name: String, body_type: CelestialBodyType, mass: f32, radius: f32, initial_velocity: Vec3, color: Color) -> Self {
+    pub fn new(
+        name: String,
+        body_type: CelestialBodyType,
+        mass: f32,
+        radius: f32,
+        initial_velocity: Vec3,
+        color: Color,
+    ) -> Self {
         Self {
             name,
             body_type,
