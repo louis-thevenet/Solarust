@@ -26,7 +26,6 @@ pub struct AppConfig {
     pub draw_velocities: bool,
     pub draw_trajectories: bool,
     pub trajectories_number_iterationss: usize,
-    pub draw_unit_vectors: bool,
     pub add_new_planet: bool,
 }
 
@@ -37,7 +36,6 @@ impl Default for AppConfig {
             draw_velocities: true,
             draw_trajectories: true,
             trajectories_number_iterationss: 500,
-            draw_unit_vectors: false,
             add_new_planet: false,
         }
     }
@@ -98,12 +96,8 @@ fn build_ui(
                 ui.label("Future trajectories steps");
             });
 
-            ui.collapsing("Debug", |ui| {
-                ui.checkbox(
-                    &mut app_config.draw_unit_vectors,
-                    "Draw unit vectors (XYZ=RGB)",
-                );
-            });
+            // ui.collapsing("Debug", |ui| {
+            // });
 
             if ui.button("Quit").clicked() {
                 app_exit_events.send(AppExit);

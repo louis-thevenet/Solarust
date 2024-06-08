@@ -105,7 +105,32 @@ fn display_selected_planet_window(
     mut duplicate: ResMut<Duplicate>,
     mut contexts: EguiContexts,
     mut query_selected: Query<(&mut CelestialBodyData, &mut Transform), With<SelectedPlanetMarker>>,
+    mut gizmos: Gizmos,
 ) {
+    // show selection by drawing unit vectors on the selection
+    for (body_data, transform) in &query_selected {
+        let body_position = transform.translation;
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::X * 2. * body_data.radius,
+            Color::RED,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Y * 2. * body_data.radius,
+            Color::GREEN,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Z * 2. * body_data.radius,
+            Color::BLUE,
+        );
+    }
+
+    // selection window
     if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
             if ui.button("Duplicate").clicked() {
