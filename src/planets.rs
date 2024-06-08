@@ -9,6 +9,7 @@ use bevy::{
 };
 
 use planet_bundle::{CelestialBodyBundle, CelestialBodyData, CelestialBodyType};
+use rand::Rng;
 
 use crate::ui::SimulationState;
 
@@ -21,7 +22,7 @@ pub struct PlanetPlugin;
 impl Plugin for PlanetPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(ClearColor(Color::BLACK))
-            .add_systems(Startup, setup_mutual)
+            .add_systems(Startup, (setup_mutual, setup_simple_stars))
             .add_systems(Update, rotate)
             .add_systems(
                 FixedUpdate,
@@ -262,6 +263,59 @@ fn uv_debug_texture() -> Image {
         TextureFormat::Rgba8UnormSrgb,
         RenderAssetUsages::RENDER_WORLD,
     )
+}
+
+fn setup_simple_stars(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let mut rng = rand::thread_rng();
+
+    let star_material = materials.add(StandardMaterial {
+        base_color: Color::WHITE,
+        emissive: (Color::WHITE * 18.),
+        ..default()
+    });
+    let radius = 10.0;
+    let star_mesh = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
+    let inner_bound = 7000.0;
+    let outer_bound = 100000.0;
+    let stars_count = 5000;
+    for _ in 0..stars_count {
+        let x = rng.gen_range(0.0..(outer_bound - inner_bound))
+            * if rng.gen_bool(0.5) { 1.0 } else { -1.0 };
+
+        let y = rng.gen_range(0.0..(outer_bound - inner_bound))
+            * if rng.gen_bool(0.5) { 1.0 } else { -1.0 };
+
+        let z = rng.gen_range(0.0..(outer_bound - inner_bound))
+            * if rng.gen_bool(0.5) { 1.0 } else { -1.0 };
+
+        commands
+            .spawn(PbrBundle {
+                mesh: star_mesh.clone(),
+                material: star_material.clone(),
+                transform: Transform {
+                    translation: Vec3::new(x, y, z),
+                    scale: Vec3::ONE * radius,
+                    ..default()
+                },
+                ..Default::default()
+            })
+            .with_children(|p| {
+                p.spawn(PointLightBundle {
+                    point_light: PointLight {
+                        color: Color::WHITE,
+                        intensity: 1_000_000_000.0,
+                        range: 1000.0,
+                        radius,
+                        ..default()
+                    },
+                    ..default()
+                });
+            });
+    }
 }
 
 /// detect new enemies and print their health
