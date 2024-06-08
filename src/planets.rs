@@ -1,4 +1,3 @@
-pub mod planet_bundle;
 use std::collections::VecDeque;
 
 use bevy::{
@@ -8,9 +7,12 @@ use bevy::{
         render_resource::{Extent3d, TextureDimension, TextureFormat},
     },
 };
+
 use planet_bundle::{CelestialBodyBundle, CelestialBodyData, CelestialBodyType};
 
-use crate::ui::{AppConfig, SimulationState};
+use crate::ui::SimulationState;
+
+pub mod planet_bundle;
 
 /// This plugin is responsible for setting up the simulation
 /// and its associated systems such as rendering and physics.
@@ -27,10 +29,7 @@ impl Plugin for PlanetPlugin {
                     .run_if(in_state(SimulationState::Running)),
             )
             .add_systems(Update, radius_changed)
-            .add_systems(Update, add_new_planet.run_if(run_if_add_new_planet))
-            .add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
-            .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories))
-            .add_systems(Update, draw_unit_vectors.run_if(run_if_draw_unit_vectors));
+       ;
     }
 }
 
@@ -128,7 +127,7 @@ fn setup_test(
             Vec3::ZERO,
             Color::YELLOW,
         ),
-    },));
+    }, ));
     commands.spawn((CelestialBodyBundle {
         pbr: PbrBundle {
             mesh: planet,
@@ -149,7 +148,7 @@ fn setup_test(
             planet_initial_velocity,
             Color::BLUE,
         ),
-    },));
+    }, ));
     // light
     commands.spawn(DirectionalLightBundle {
         transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
@@ -201,7 +200,7 @@ fn setup_mutual(
             Vec3::ZERO,
             Color::YELLOW,
         ),
-    },));
+    }, ));
     commands.spawn((CelestialBodyBundle {
         pbr: PbrBundle {
             mesh: planet,
@@ -222,7 +221,7 @@ fn setup_mutual(
             planet_initial_velocity,
             Color::BLUE,
         ),
-    },));
+    }, ));
     // light
     commands.spawn(DirectionalLightBundle {
         transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
@@ -259,157 +258,6 @@ fn uv_debug_texture() -> Image {
     )
 }
 
-fn run_if_add_new_planet(app_config: Res<AppConfig>) -> bool {
-    app_config.add_new_planet
-}
-
-fn add_new_planet(
-    mut app_config: ResMut<AppConfig>,
-    mut commands: Commands,
-    selected_query: Query<
-        (&Transform, &Handle<Mesh>, &CelestialBodyData),
-        With<crate::ui::planet_ui::SelectedPlanetMarker>,
-    >,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    let color = Color::rgb_from_array([
-        rand::random::<f32>(),
-        rand::random::<f32>(),
-        rand::random::<f32>(),
-    ]);
-    let material = materials.add(StandardMaterial {
-        base_color: color,
-        ..Default::default()
-    });
-
-    app_config.add_new_planet = false;
-
-    if let Ok((tfm, mesh, data)) = selected_query.get_single() {
-        commands.spawn((CelestialBodyBundle {
-            pbr: PbrBundle {
-                mesh: mesh.clone(),
-                material,
-                transform: Transform {
-                    translation: tfm.translation + Vec3::ONE * data.radius,
-                    scale: Vec3::ONE * data.radius,
-                    ..default()
-                },
-                ..Default::default()
-            },
-
-            body_data: CelestialBodyData::new(
-                String::from("Planet"),
-                CelestialBodyType::Planet,
-                data.mass,
-                data.radius,
-                data.velocity,
-                color,
-            ),
-        },));
-    }
-}
-
-/// Returns true if the app is configured to draw velocities.
-fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
-    app_config.draw_velocities
-}
-
-/// Draws velocity vectors for all bodies.
-fn draw_vectors(
-    mut gizmos: Gizmos,
-    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
-) {
-    for (body_data, transform) in &query {
-        let body_position = transform.translation;
-        let body_velocity = body_data.velocity;
-
-        gizmos.arrow(
-            body_position,
-            body_position + 2. * body_velocity / body_data.radius,
-            Color::YELLOW,
-        );
-    }
-}
-
-/// Returns true if the app is configured to draw velocities.
-fn run_if_draw_unit_vectors(app_config: Res<AppConfig>) -> bool {
-    app_config.draw_unit_vectors
-}
-
-/// Draws velocity vectors for all bodies.
-fn draw_unit_vectors(
-    mut gizmos: Gizmos,
-    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
-) {
-    for (body_data, transform) in &query {
-        let body_position = transform.translation;
-
-        gizmos.arrow(
-            body_position,
-            body_position + Vec3::X * 2. * body_data.radius,
-            Color::RED,
-        );
-
-        gizmos.arrow(
-            body_position,
-            body_position + Vec3::Y * 2. * body_data.radius,
-            Color::GREEN,
-        );
-
-        gizmos.arrow(
-            body_position,
-            body_position + Vec3::Z * 2. * body_data.radius,
-            Color::BLUE,
-        );
-    }
-}
-
-/// Returns true if the app is configured to draw trajectories.
-fn run_if_draw_trajectories(app_config: Res<AppConfig>) -> bool {
-    app_config.draw_trajectories
-}
-
-/// Draws trajectories for all bodies by simulating their future positions over time.
-fn draw_trajectories(
-    mut gizmos: Gizmos,
-    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
-    app_config: Res<AppConfig>,
-) {
-    let g = 1.;
-    let delta_seconds = 0.01;
-    let mut bodies_and_positions = query
-        .iter()
-        .map(|(bd, tfm)| (bd, tfm.translation, bd.velocity))
-        .collect::<Vec<_>>();
-
-    for _ in 0..app_config.trajectories_number_iterationss {
-        let old_bodies_and_positions = bodies_and_positions.clone();
-
-        for i in 0..bodies_and_positions.len() {
-            let mut total_velocity_to_add = Vec3::ZERO;
-            for j in 0..bodies_and_positions.len() {
-                if i == j {
-                    continue;
-                }
-                total_velocity_to_add += bodies_and_positions[i].0.compute_velocity(
-                    old_bodies_and_positions[i].1,
-                    old_bodies_and_positions[j].1,
-                    old_bodies_and_positions[j].0.mass,
-                    g,
-                    delta_seconds,
-                );
-            }
-            bodies_and_positions[i].2 += total_velocity_to_add;
-            bodies_and_positions[i].1 =
-                bodies_and_positions[i].1 + bodies_and_positions[i].2 * delta_seconds;
-            gizmos.line(
-                old_bodies_and_positions[i].1,
-                bodies_and_positions[i].1,
-                Color::rgb_from_array(bodies_and_positions[i].0.color),
-            );
-        }
-    }
-}
 
 /// detect new enemies and print their health
 fn radius_changed(
