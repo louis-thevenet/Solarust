@@ -105,14 +105,16 @@ fn display_selected_planet_window(
     mut commands: Commands,
     mut duplicate: ResMut<Duplicate>,
     mut contexts: EguiContexts,
-    mut query_selected: Query<
+    mut query_selected_data: Query<
         (Entity, &mut CelestialBodyData, &mut Transform),
         With<SelectedPlanetMarker>,
     >,
+    mut standard_materials: Query<&mut Handle<StandardMaterial>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     mut gizmos: Gizmos,
 ) {
     // show selection by drawing unit vectors on the selection
-    for (_, body_data, transform) in &query_selected {
+    for (_, body_data, transform) in &query_selected_data {
         let body_position = transform.translation;
 
         gizmos.arrow(
@@ -135,7 +137,7 @@ fn display_selected_planet_window(
     }
 
     // selection window
-    if let Ok((entity, mut planet, mut tfm)) = query_selected.get_single_mut() {
+    if let Ok((entity, mut planet, mut tfm)) = query_selected_data.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
             if ui.button("Duplicate").clicked() {
                 duplicate.0 = true;
@@ -152,9 +154,21 @@ fn display_selected_planet_window(
                 ui.label("Mass");
             });
 
-            ui.add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32).text("Red"));
-            ui.add(egui::Slider::new(&mut planet.color[1], 0.0_f32..=1.0_f32).text("Green"));
-            ui.add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32).text("Blue"));
+            if ui
+                .add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32).text("Red"))
+                .changed()
+                || ui
+                    .add(egui::Slider::new(&mut planet.color[1], 0.0_f32..=1.0_f32).text("Green"))
+                    .changed()
+                || ui
+                    .add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32).text("Blue"))
+                    .changed()
+            {
+                if let Ok(handle) = standard_materials.get_mut(entity) {
+                    materials.get_mut(handle.id()).unwrap().base_color =
+                        Color::rgb_from_array(planet.color);
+                }
+            }
 
             egui::ComboBox::from_label("Type")
                 .selected_text(format!("{:?}", planet.body_type))
@@ -167,6 +181,10 @@ fn display_selected_planet_window(
                         )
                         .clicked()
                     {
+                        if let Ok(handle) = standard_materials.get_mut(entity) {
+                            let m = materials.get_mut(handle.id()).unwrap();
+                            m.emissive = Color::BLACK;
+                        }
                         commands.entity(entity).despawn_descendants();
                     }
 
@@ -178,6 +196,11 @@ fn display_selected_planet_window(
                         )
                         .clicked()
                     {
+                        if let Ok(handle) = standard_materials.get_mut(entity) {
+                            let m = materials.get_mut(handle.id()).unwrap();
+                            m.emissive = m.base_color * 20.;
+                        }
+
                         commands.entity(entity).with_children(|p| {
                             p.spawn(PointLightBundle {
                                 point_light: PointLight {
