@@ -14,7 +14,6 @@ use crate::ui::SimulationState;
 
 pub mod planet_bundle;
 
-
 /// This plugin is responsible for setting up the simulation
 /// and its associated systems such as rendering and physics.
 pub struct PlanetPlugin;
@@ -127,7 +126,7 @@ fn setup_test(
             Vec3::ZERO,
             Color::YELLOW,
         ),
-    }, ));
+    },));
     commands.spawn((CelestialBodyBundle {
         pbr: PbrBundle {
             mesh: planet,
@@ -148,7 +147,7 @@ fn setup_test(
             planet_initial_velocity,
             Color::BLUE,
         ),
-    }, ));
+    },));
     // light
     commands.spawn(DirectionalLightBundle {
         transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
@@ -160,18 +159,15 @@ fn setup_test(
 fn setup_mutual(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let sun_material = materials.add(StandardMaterial {
-        base_color: Color::YELLOW,
-        ..Default::default()
-    });
-
-    let debug_material = materials.add(StandardMaterial {
-        base_color_texture: Some(images.add(uv_debug_texture())),
+        base_color: Color::ORANGE_RED,
+        emissive: (Color::ORANGE_RED * 18.),
         ..default()
     });
+
+    let debug_material = materials.add(Color::BLUE);
 
     let sun_mass = 1.0e6;
     let planet_mass = 1.0e6;
@@ -181,26 +177,40 @@ fn setup_mutual(
     let sun = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
     let planet = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
 
-    commands.spawn((CelestialBodyBundle {
-        pbr: PbrBundle {
-            mesh: sun,
-            material: sun_material.clone(),
-            transform: Transform {
-                translation: Vec3::new(0., 0., 0.),
-                rotation: Default::default(),
-                scale: Vec3::ONE * sun_radius,
+    commands
+        .spawn((CelestialBodyBundle {
+            pbr: PbrBundle {
+                mesh: sun,
+                material: sun_material.clone(),
+                transform: Transform {
+                    translation: Vec3::new(0., 0., 0.),
+                    rotation: Default::default(),
+                    scale: Vec3::ONE * sun_radius,
+                },
+                ..Default::default()
             },
-            ..Default::default()
-        },
-        body_data: CelestialBodyData::new(
-            String::from("Sun"),
-            CelestialBodyType::Star(1.),
-            sun_mass,
-            sun_radius,
-            Vec3::ZERO,
-            Color::YELLOW,
-        ),
-    }, ));
+            body_data: CelestialBodyData::new(
+                String::from("Sun"),
+                CelestialBodyType::Star(1.),
+                sun_mass,
+                sun_radius,
+                Vec3::ZERO,
+                Color::YELLOW,
+            ),
+        },))
+        .with_children(|p| {
+            p.spawn(PointLightBundle {
+                point_light: PointLight {
+                    color: Color::WHITE,
+                    intensity: 1_000_000_000.0,
+                    range: 1000.0,
+                    radius: sun_radius,
+                    ..default()
+                },
+                ..default()
+            });
+        });
+
     commands.spawn((CelestialBodyBundle {
         pbr: PbrBundle {
             mesh: planet,
@@ -221,12 +231,7 @@ fn setup_mutual(
             planet_initial_velocity,
             Color::BLUE,
         ),
-    }, ));
-    // light
-    commands.spawn(DirectionalLightBundle {
-        transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+    },));
 }
 
 /// Creates a colorful test pattern
@@ -257,7 +262,6 @@ fn uv_debug_texture() -> Image {
         RenderAssetUsages::RENDER_WORLD,
     )
 }
-
 
 /// detect new enemies and print their health
 fn radius_changed(

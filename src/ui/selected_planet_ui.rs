@@ -102,13 +102,17 @@ fn check_selection(
 
 /// Displays the selected planet's data in a floating window.
 fn display_selected_planet_window(
+    mut commands: Commands,
     mut duplicate: ResMut<Duplicate>,
     mut contexts: EguiContexts,
-    mut query_selected: Query<(&mut CelestialBodyData, &mut Transform), With<SelectedPlanetMarker>>,
+    mut query_selected: Query<
+        (Entity, &mut CelestialBodyData, &mut Transform),
+        With<SelectedPlanetMarker>,
+    >,
     mut gizmos: Gizmos,
 ) {
     // show selection by drawing unit vectors on the selection
-    for (body_data, transform) in &query_selected {
+    for (_, body_data, transform) in &query_selected {
         let body_position = transform.translation;
 
         gizmos.arrow(
@@ -131,7 +135,7 @@ fn display_selected_planet_window(
     }
 
     // selection window
-    if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
+    if let Ok((entity, mut planet, mut tfm)) = query_selected.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
             if ui.button("Duplicate").clicked() {
                 duplicate.0 = true;
@@ -151,6 +155,43 @@ fn display_selected_planet_window(
             ui.add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32).text("Red"));
             ui.add(egui::Slider::new(&mut planet.color[1], 0.0_f32..=1.0_f32).text("Green"));
             ui.add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32).text("Blue"));
+
+            egui::ComboBox::from_label("Type")
+                .selected_text(format!("{:?}", planet.body_type))
+                .show_ui(ui, |ui| {
+                    if ui
+                        .selectable_value(
+                            &mut planet.body_type,
+                            CelestialBodyType::Planet,
+                            "Planet",
+                        )
+                        .clicked()
+                    {
+                        commands.entity(entity).despawn_descendants();
+                    }
+
+                    if ui
+                        .selectable_value(
+                            &mut planet.body_type,
+                            CelestialBodyType::Star(1_000_000_000.0),
+                            "Star",
+                        )
+                        .clicked()
+                    {
+                        commands.entity(entity).with_children(|p| {
+                            p.spawn(PointLightBundle {
+                                point_light: PointLight {
+                                    color: Color::WHITE,
+                                    intensity: 1_000_000_000.0,
+                                    range: 1000.0,
+                                    radius: planet.radius,
+                                    ..default()
+                                },
+                                ..default()
+                            });
+                        });
+                    }
+                });
 
             ui.horizontal(|ui| {
                 ui.add(egui::DragValue::new(&mut tfm.translation.x));
