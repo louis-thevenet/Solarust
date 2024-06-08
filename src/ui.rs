@@ -8,8 +8,8 @@ use selected_planet_ui::SelectedPlanetUiPlugin;
 use crate::camera::{camera_controller::CameraController, MainCamera};
 use crate::ui::planet_ui::PlanetUiPlugin;
 
-mod planet_ui;
 mod perf_ui;
+mod planet_ui;
 pub(crate) mod selected_planet_ui;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
@@ -26,7 +26,6 @@ pub struct AppConfig {
     pub draw_velocities: bool,
     pub draw_trajectories: bool,
     pub trajectories_number_iterationss: usize,
-    pub draw_unit_vectors: bool,
     pub add_new_planet: bool,
 }
 
@@ -37,7 +36,6 @@ impl Default for AppConfig {
             draw_velocities: true,
             draw_trajectories: true,
             trajectories_number_iterationss: 500,
-            draw_unit_vectors: false,
             add_new_planet: false,
         }
     }
@@ -65,6 +63,7 @@ fn build_ui(
     mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
     query_cam: Query<&Transform, With<MainCamera>>,
 ) {
+    // settings panel
     egui::SidePanel::left("Menu")
         .resizable(true)
         .show(contexts.ctx_mut(), |ui| {
@@ -83,18 +82,9 @@ fn build_ui(
                 }
             }
 
-            let cam = query_cam.single().translation;
-
-            ui.label(format!(
-                "Cam position : ({:.1}, {:.1}, {:.1})",
-                cam.x, cam.y, cam.z
-            ));
-            ui.label(format!("{}", CameraController::default()));
-
             if ui.button("Add new planet").clicked() {
                 app_config.add_new_planet = true;
             };
-
             ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");
 
@@ -106,16 +96,25 @@ fn build_ui(
                 ui.label("Future trajectories steps");
             });
 
-            ui.collapsing("Debug", |ui| {
-                ui.checkbox(
-                    &mut app_config.draw_unit_vectors,
-                    "Draw unit vectors (XYZ=RGB)",
-                );
-            });
+            // ui.collapsing("Debug", |ui| {
+            // });
 
             if ui.button("Quit").clicked() {
                 app_exit_events.send(AppExit);
             };
+        });
+
+    // controls window
+    egui::Window::new("Controls")
+        .default_open(false)
+        .show(contexts.ctx_mut(), |ui| {
+            let cam = query_cam.single().translation;
+
+            ui.label(format!(
+                "Cam position : ({:.1}, {:.1}, {:.1})",
+                cam.x, cam.y, cam.z
+            ));
+            ui.label(format!("{}", CameraController::default()));
         });
 }
 

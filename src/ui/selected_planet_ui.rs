@@ -3,9 +3,12 @@ use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy_egui::{egui, EguiContexts};
 
-use crate::{camera::MainCamera, planets::planet_bundle::CelestialBodyData};
 use crate::planets::planet_bundle::{CelestialBodyBundle, CelestialBodyType};
 use crate::ui::AppConfig;
+use crate::{camera::MainCamera, planets::planet_bundle::CelestialBodyData};
+
+#[derive(Resource, Default)]
+struct Duplicate(bool);
 
 #[derive(Component)]
 /// Marker component for the currently selected planet.
@@ -17,11 +20,19 @@ pub struct SelectedPlanetUiPlugin;
 
 impl Plugin for SelectedPlanetUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (check_selection, display_selected_planet_window, add_new_planet.run_if(run_if_add_new_planet)));
+        app.init_resource::<Duplicate>().add_systems(
+            Update,
+            (
+                check_selection,
+                display_selected_planet_window,
+                add_new_planet.run_if(run_if_add_new_planet),
+                duplicate_planet.run_if(run_if_duplicate_planet),
+            ),
+        );
     }
 }
 
-/// Clears the selected planet. 
+/// Clears the selected planet.
 fn clear_selection(
     commands: &mut Commands,
     selected: Result<(Entity, Mut<CelestialBodyData>, &Transform), query::QuerySingleError>,
@@ -76,7 +87,7 @@ fn check_selection(
 
         let h = ray.origin
             + ray.direction.dot(l) * ray.direction.as_dvec3().as_vec3()
-            / (ray.direction.length() * ray.direction.length());
+                / (ray.direction.length() * ray.direction.length());
 
         let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
 
@@ -91,11 +102,41 @@ fn check_selection(
 
 /// Displays the selected planet's data in a floating window.
 fn display_selected_planet_window(
+    mut duplicate: ResMut<Duplicate>,
     mut contexts: EguiContexts,
     mut query_selected: Query<(&mut CelestialBodyData, &mut Transform), With<SelectedPlanetMarker>>,
+    mut gizmos: Gizmos,
 ) {
+    // show selection by drawing unit vectors on the selection
+    for (body_data, transform) in &query_selected {
+        let body_position = transform.translation;
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::X * 2. * body_data.radius,
+            Color::RED,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Y * 2. * body_data.radius,
+            Color::GREEN,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Z * 2. * body_data.radius,
+            Color::BLUE,
+        );
+    }
+
+    // selection window
     if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
+            if ui.button("Duplicate").clicked() {
+                duplicate.0 = true;
+            }
+
             ui.horizontal(|ui| {
                 ui.add(egui::DragValue::new(&mut planet.radius));
                 ui.label("Radius");
@@ -128,7 +169,6 @@ fn display_selected_planet_window(
     }
 }
 
-
 fn run_if_add_new_planet(app_config: Res<AppConfig>) -> bool {
     app_config.add_new_planet
 }
@@ -136,12 +176,15 @@ fn run_if_add_new_planet(app_config: Res<AppConfig>) -> bool {
 fn add_new_planet(
     mut app_config: ResMut<AppConfig>,
     mut commands: Commands,
-    selected_query: Query<
-        (&Transform, &Handle<Mesh>, &CelestialBodyData),
-        With<SelectedPlanetMarker>,
-    >,
+    query: Query<(&Transform, &CelestialBodyData)>,
+    mut query_selected: Query<Entity, With<SelectedPlanetMarker>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
+    if let Ok(entity) = query_selected.get_single_mut() {
+        commands.entity(entity).remove::<SelectedPlanetMarker>();
+    }
+
     let color = Color::rgb_from_array([
         rand::random::<f32>(),
         rand::random::<f32>(),
@@ -154,27 +197,111 @@ fn add_new_planet(
 
     app_config.add_new_planet = false;
 
-    if let Ok((tfm, mesh, data)) = selected_query.get_single() {
-        commands.spawn((CelestialBodyBundle {
+    let mesh = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
+
+    let mut radius = 0.;
+    let mut mass = 0.;
+    let mut position = Vec3::ZERO;
+    let mut velocity = Vec3::ZERO;
+    for (tfm, data) in &query {
+        radius += data.radius;
+        mass += data.mass;
+        position += tfm.translation;
+        velocity += data.velocity;
+    }
+
+    let cnt = query.iter().count() as f32;
+
+    radius /= cnt;
+    mass /= cnt;
+    position /= cnt;
+    velocity /= cnt;
+    commands.spawn((
+        CelestialBodyBundle {
             pbr: PbrBundle {
-                mesh: mesh.clone(),
+                mesh,
                 material,
                 transform: Transform {
-                    translation: tfm.translation + Vec3::ONE * data.radius,
-                    scale: Vec3::ONE * data.radius,
+                    translation: position
+                        + if cnt == 1.0 {
+                            Vec3::ONE * radius
+                        } else {
+                            Vec3::ZERO
+                        },
+                    scale: Vec3::ONE * radius,
                     ..default()
                 },
                 ..Default::default()
             },
 
             body_data: CelestialBodyData::new(
-                String::from("Planet"),
+                String::from("New Planet"),
                 CelestialBodyType::Planet,
-                data.mass,
-                data.radius,
-                data.velocity,
+                mass,
+                radius,
+                velocity,
                 color,
             ),
-        }, ));
+        },
+        SelectedPlanetMarker,
+    ));
+}
+
+fn run_if_duplicate_planet(duplicate: Res<Duplicate>) -> bool {
+    duplicate.0
+}
+
+fn duplicate_planet(
+    mut duplicate: ResMut<Duplicate>,
+    mut commands: Commands,
+    selected_query: Query<
+        (&Transform, &Handle<Mesh>, &CelestialBodyData),
+        With<SelectedPlanetMarker>,
+    >,
+    mut selected_entity_query: Query<Entity, With<SelectedPlanetMarker>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    let color = Color::rgb_from_array([
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+        rand::random::<f32>(),
+    ]);
+    let material = materials.add(StandardMaterial {
+        base_color: color,
+        ..Default::default()
+    });
+
+    duplicate.0 = false;
+
+    if let Ok((tfm, mesh, data)) = selected_query.get_single() {
+        commands.spawn((
+            CelestialBodyBundle {
+                pbr: PbrBundle {
+                    mesh: mesh.clone(),
+                    material,
+                    transform: Transform {
+                        translation: tfm.translation + Vec3::ONE * data.radius,
+                        scale: Vec3::ONE * data.radius,
+                        ..default()
+                    },
+                    ..Default::default()
+                },
+
+                body_data: CelestialBodyData::new(
+                    String::from("Planet"),
+                    CelestialBodyType::Planet,
+                    data.mass,
+                    data.radius,
+                    data.velocity,
+                    color,
+                ),
+            },
+            SelectedPlanetMarker,
+        ));
+    }
+
+    // since we're in duplicate, this should always be Ok(_)
+    if let Ok(entity) = selected_entity_query.get_single_mut() {
+        commands.entity(entity).remove::<SelectedPlanetMarker>();
     }
 }
