@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-
 use crate::planets::planet_bundle::CelestialBodyData;
 use crate::ui::AppConfig;
 

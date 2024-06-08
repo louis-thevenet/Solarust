@@ -14,6 +14,7 @@ use crate::ui::SimulationState;
 
 pub mod planet_bundle;
 
+
 /// This plugin is responsible for setting up the simulation
 /// and its associated systems such as rendering and physics.
 pub struct PlanetPlugin;
@@ -28,8 +29,7 @@ impl Plugin for PlanetPlugin {
                     .chain()
                     .run_if(in_state(SimulationState::Running)),
             )
-            .add_systems(Update, radius_changed)
-       ;
+            .add_systems(Update, radius_changed);
     }
 }
 
