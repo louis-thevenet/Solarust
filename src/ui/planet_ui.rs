@@ -1,6 +1,6 @@
-use bevy::prelude::*;
 use crate::planets::planet_bundle::CelestialBodyData;
 use crate::ui::AppConfig;
+use bevy::prelude::*;
 
 pub struct PlanetUiPlugin;
 
@@ -11,7 +11,6 @@ impl Plugin for PlanetUiPlugin {
             .add_systems(Update, draw_unit_vectors.run_if(run_if_draw_unit_vectors));
     }
 }
-
 
 /// Returns true if the app is configured to draw velocities.
 fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
