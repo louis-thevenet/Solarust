@@ -1,127 +1,116 @@
-use bevy::ecs::query;
 use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
-use bevy_egui::{egui, EguiContexts};
+use crate::planets::planet_bundle::CelestialBodyData;
+use crate::ui::AppConfig;
 
-use crate::{camera::MainCamera, planets::planet_bundle::CelestialBodyData};
-
-#[derive(Component)]
-/// Marker component for the currently selected planet.
-pub struct SelectedPlanetMarker;
-
-/// Plugin responsible for displaying the planets related UI.
-/// This includes the currently selected planet's details for now.
 pub struct PlanetUiPlugin;
 
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (check_selection, display_selected_planet_window));
+        app.add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
+            .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories))
+            .add_systems(Update, draw_unit_vectors.run_if(run_if_draw_unit_vectors));
     }
 }
 
-/// Clears the selected planet.
-fn clear_selection(
-    commands: &mut Commands,
-    selected: Result<(Entity, Mut<CelestialBodyData>, &Transform), query::QuerySingleError>,
+
+/// Returns true if the app is configured to draw velocities.
+fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
+    app_config.draw_velocities
+}
+
+/// Draws velocity vectors for all bodies.
+fn draw_vectors(
+    mut gizmos: Gizmos,
+    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
 ) {
-    if let Ok((e, _, _)) = selected {
-        commands
-            .get_entity(e)
-            .unwrap()
-            .remove::<SelectedPlanetMarker>();
+    for (body_data, transform) in &query {
+        let body_position = transform.translation;
+        let body_velocity = body_data.velocity;
+
+        gizmos.arrow(
+            body_position,
+            body_position + 2. * body_velocity / body_data.radius,
+            Color::YELLOW,
+        );
     }
 }
 
-/// Checks if the user has clicked on a planet and selects it.
-#[allow(clippy::type_complexity)]
-fn check_selection(
-    mut contexts: EguiContexts,
-    mut commands: Commands,
-    mut query: Query<
-        (Entity, &mut CelestialBodyData, &Transform),
-        (With<CelestialBodyData>, Without<SelectedPlanetMarker>),
-    >,
-    mut query_selected: Query<
-        (Entity, &mut CelestialBodyData, &Transform),
-        With<SelectedPlanetMarker>,
-    >,
-    mouse_button_input: Res<ButtonInput<MouseButton>>,
-    camera_query: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
+/// Returns true if the app is configured to draw velocities.
+fn run_if_draw_unit_vectors(app_config: Res<AppConfig>) -> bool {
+    app_config.draw_unit_vectors
+}
+
+/// Draws velocity vectors for all bodies.
+fn draw_unit_vectors(
+    mut gizmos: Gizmos,
+    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
 ) {
-    if !mouse_button_input.just_pressed(MouseButton::Left)
-        || contexts.ctx_mut().wants_pointer_input()
-        || contexts.ctx_mut().wants_keyboard_input()
-    {
-        return;
+    for (body_data, transform) in &query {
+        let body_position = transform.translation;
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::X * 2. * body_data.radius,
+            Color::RED,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Y * 2. * body_data.radius,
+            Color::GREEN,
+        );
+
+        gizmos.arrow(
+            body_position,
+            body_position + Vec3::Z * 2. * body_data.radius,
+            Color::BLUE,
+        );
     }
-    let (camera, camera_transform) = camera_query.single();
+}
 
-    let Some(cursor_position) = q_windows.single().cursor_position() else {
-        return;
-    };
+/// Returns true if the app is configured to draw trajectories.
+fn run_if_draw_trajectories(app_config: Res<AppConfig>) -> bool {
+    app_config.draw_trajectories
+}
 
-    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-        //clear_selection(&mut commands, query_selected.get_single_mut());
-        return;
-    };
+/// Draws trajectories for all bodies by simulating their future positions over time.
+fn draw_trajectories(
+    mut gizmos: Gizmos,
+    query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
+    app_config: Res<AppConfig>,
+) {
+    let g = 1.;
+    let delta_seconds = 0.01;
+    let mut bodies_and_positions = query
+        .iter()
+        .map(|(bd, tfm)| (bd, tfm.translation, bd.velocity))
+        .collect::<Vec<_>>();
 
-    for (e, planet, transform) in &mut query {
-        let l = ray.origin - transform.translation;
-        if ray.direction.dot(l).abs() < 0. {
-            continue;
+    for _ in 0..app_config.trajectories_number_iterationss {
+        let old_bodies_and_positions = bodies_and_positions.clone();
+
+        for i in 0..bodies_and_positions.len() {
+            let mut total_velocity_to_add = Vec3::ZERO;
+            for j in 0..bodies_and_positions.len() {
+                if i == j {
+                    continue;
+                }
+                total_velocity_to_add += bodies_and_positions[i].0.compute_velocity(
+                    old_bodies_and_positions[i].1,
+                    old_bodies_and_positions[j].1,
+                    old_bodies_and_positions[j].0.mass,
+                    g,
+                    delta_seconds,
+                );
+            }
+            bodies_and_positions[i].2 += total_velocity_to_add;
+            bodies_and_positions[i].1 =
+                bodies_and_positions[i].1 + bodies_and_positions[i].2 * delta_seconds;
+            gizmos.line(
+                old_bodies_and_positions[i].1,
+                bodies_and_positions[i].1,
+                Color::rgb_from_array(bodies_and_positions[i].0.color),
+            );
         }
-
-        let h = ray.origin
-            + ray.direction.dot(l) * ray.direction.as_dvec3().as_vec3()
-                / (ray.direction.length() * ray.direction.length());
-
-        let d = (l.length_squared() - (h - ray.origin).length_squared()).sqrt();
-
-        if d < planet.radius {
-            clear_selection(&mut commands, query_selected.get_single_mut());
-            commands.get_entity(e).unwrap().insert(SelectedPlanetMarker);
-            return;
-        }
-    }
-    //clear_selection(&mut commands, query_selected.get_single_mut());
-}
-
-/// Displays the selected planet's data in a floating window.
-fn display_selected_planet_window(
-    mut contexts: EguiContexts,
-    mut query_selected: Query<(&mut CelestialBodyData, &mut Transform), With<SelectedPlanetMarker>>,
-) {
-    if let Ok((mut planet, mut tfm)) = query_selected.get_single_mut() {
-        egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
-            ui.horizontal(|ui| {
-                ui.add(egui::DragValue::new(&mut planet.radius));
-                ui.label("Radius");
-            });
-
-            ui.horizontal(|ui| {
-                let speed = (planet.mass / 10.0 + 1.0).abs();
-                ui.add(egui::DragValue::new(&mut planet.mass).speed(speed));
-                ui.label("Mass");
-            });
-
-            ui.add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32).text("Red"));
-            ui.add(egui::Slider::new(&mut planet.color[1], 0.0_f32..=1.0_f32).text("Green"));
-            ui.add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32).text("Blue"));
-
-            ui.horizontal(|ui| {
-                ui.add(egui::DragValue::new(&mut tfm.translation.x));
-                ui.add(egui::DragValue::new(&mut tfm.translation.y));
-                ui.add(egui::DragValue::new(&mut tfm.translation.z));
-                ui.label("Position");
-            });
-
-            ui.horizontal(|ui| {
-                ui.add(egui::DragValue::new(&mut planet.velocity.x));
-                ui.add(egui::DragValue::new(&mut planet.velocity.y));
-                ui.add(egui::DragValue::new(&mut planet.velocity.z));
-                ui.label("Velocity");
-            })
-        });
     }
 }
