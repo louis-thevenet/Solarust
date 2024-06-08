@@ -8,8 +8,8 @@ use selected_planet_ui::SelectedPlanetUiPlugin;
 use crate::camera::{camera_controller::CameraController, MainCamera};
 use crate::ui::planet_ui::PlanetUiPlugin;
 
-mod planet_ui;
 mod perf_ui;
+mod planet_ui;
 pub(crate) mod selected_planet_ui;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
@@ -65,6 +65,7 @@ fn build_ui(
     mut app_exit_events: ResMut<Events<bevy::app::AppExit>>,
     query_cam: Query<&Transform, With<MainCamera>>,
 ) {
+    // settings panel
     egui::SidePanel::left("Menu")
         .resizable(true)
         .show(contexts.ctx_mut(), |ui| {
@@ -83,18 +84,9 @@ fn build_ui(
                 }
             }
 
-            let cam = query_cam.single().translation;
-
-            ui.label(format!(
-                "Cam position : ({:.1}, {:.1}, {:.1})",
-                cam.x, cam.y, cam.z
-            ));
-            ui.label(format!("{}", CameraController::default()));
-
             if ui.button("Add new planet").clicked() {
                 app_config.add_new_planet = true;
             };
-
             ui.checkbox(&mut app_config.draw_velocities, "Draw velocities");
             ui.checkbox(&mut app_config.draw_trajectories, "Draw trajectories");
 
@@ -116,6 +108,19 @@ fn build_ui(
             if ui.button("Quit").clicked() {
                 app_exit_events.send(AppExit);
             };
+        });
+
+    // controls window
+    egui::Window::new("Controls")
+        .default_open(false)
+        .show(contexts.ctx_mut(), |ui| {
+            let cam = query_cam.single().translation;
+
+            ui.label(format!(
+                "Cam position : ({:.1}, {:.1}, {:.1})",
+                cam.x, cam.y, cam.z
+            ));
+            ui.label(format!("{}", CameraController::default()));
         });
 }
 
