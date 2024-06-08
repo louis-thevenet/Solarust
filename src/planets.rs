@@ -20,7 +20,8 @@ pub struct PlanetPlugin;
 
 impl Plugin for PlanetPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_systems(Startup, setup_mutual)
+        app.insert_resource(ClearColor(Color::BLACK))
+            .add_systems(Startup, setup_mutual)
             .add_systems(Update, rotate)
             .add_systems(
                 FixedUpdate,
