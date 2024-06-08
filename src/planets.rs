@@ -279,8 +279,8 @@ fn setup_simple_stars(
     });
     let radius = 10.0;
     let star_mesh = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
-    let inner_bound = 7000.0;
-    let outer_bound = 100000.0;
+    let inner_bound = 5000.0;
+    let outer_bound = 50000.0;
     let stars_count = 5000;
     for _ in 0..stars_count {
         let x = rng.gen_range(0.0..(outer_bound - inner_bound))
