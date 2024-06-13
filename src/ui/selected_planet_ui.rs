@@ -163,7 +163,7 @@ fn display_selected_planet_window(
                 ui.label("Mass");
             });
 
-            // Color
+            // Color & Emissive factor
             if ui
                 .add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32).text("Red"))
                 .changed()
@@ -173,10 +173,20 @@ fn display_selected_planet_window(
                 || ui
                     .add(egui::Slider::new(&mut planet.color[2], 0.0_f32..=1.0_f32).text("Blue"))
                     .changed()
+                || ui
+                    .add(
+                        egui::Slider::new(&mut planet.emissive_factor, 0.0_f32..=1_000_f32)
+                            .text("Emissive factor"),
+                    )
+                    .changed()
             {
                 if let Ok(handle) = standard_materials.get_mut(entity) {
                     materials.get_mut(handle.id()).unwrap().base_color =
                         Color::rgb_from_array(planet.color);
+                }
+                if let Ok(handle) = standard_materials.get_mut(entity) {
+                    let m = materials.get_mut(handle.id()).unwrap();
+                    m.emissive = m.base_color * planet.emissive_factor;
                 }
             }
 
@@ -189,25 +199,9 @@ fn display_selected_planet_window(
                     )
                     .changed()
             {
-                let children = children.unwrap();
-                for &child in children.iter() {
+                for &child in children.unwrap().iter() {
                     let mut point_light = query_child.get_mut(child).unwrap();
                     point_light.intensity = planet.light_factor;
-                }
-            }
-
-            // Emissive factor
-            if planet.body_type == CelestialBodyType::Star
-                && ui
-                    .add(
-                        egui::Slider::new(&mut planet.emissive_factor, 0.0_f32..=1_000_f32)
-                            .text("Emissive factor"),
-                    )
-                    .changed()
-            {
-                if let Ok(handle) = standard_materials.get_mut(entity) {
-                    let m = materials.get_mut(handle.id()).unwrap();
-                    m.emissive = m.base_color * planet.emissive_factor;
                 }
             }
 
