@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Bundle)]
 /// A bundle of components for a `CelestialBody`.
@@ -9,14 +10,14 @@ pub struct CelestialBodyBundle {
     pub body_data: CelestialBodyData,
 }
 
-#[derive(Component, Debug, Clone, PartialEq)]
+#[derive(Component, Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// Different types of `CelestialBodies`
 pub enum CelestialBodyType {
     Planet,
     Star(f32),
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Deserialize, Serialize)]
 /// The data for a Body
 pub struct CelestialBodyData {
     /// The body's name, acts as an identifier.

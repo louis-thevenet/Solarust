@@ -2,12 +2,14 @@ use bevy::app::AppExit;
 use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
+use io::SaveLoadPlugin;
 use perf_ui::DebugUiPlugin;
 use selected_planet_ui::SelectedPlanetUiPlugin;
 
 use crate::camera::{camera_controller::CameraController, MainCamera};
 use crate::ui::planet_ui::PlanetUiPlugin;
 
+mod io;
 mod perf_ui;
 mod planet_ui;
 pub(crate) mod selected_planet_ui;
@@ -18,6 +20,8 @@ pub enum SimulationState {
     #[default]
     Paused,
     Running,
+    PickSceneFile,
+    SaveSceneFile,
 }
 
 #[derive(Resource)]
@@ -49,7 +53,12 @@ impl Plugin for UIPlugin {
         app.init_resource::<AppConfig>()
             .init_state::<SimulationState>()
             .add_plugins(EguiPlugin)
-            .add_plugins((DebugUiPlugin, SelectedPlanetUiPlugin, PlanetUiPlugin))
+            .add_plugins((
+                DebugUiPlugin,
+                SelectedPlanetUiPlugin,
+                PlanetUiPlugin,
+                SaveLoadPlugin,
+            ))
             .add_systems(Update, (build_ui, ui_controls));
     }
 }
@@ -80,6 +89,7 @@ fn build_ui(
                         next_sim_state.set(SimulationState::Paused);
                     }
                 }
+                SimulationState::PickSceneFile | SimulationState::SaveSceneFile => return,
             }
 
             if ui.button("Add new planet").clicked() {
@@ -99,9 +109,17 @@ fn build_ui(
             // ui.collapsing("Debug", |ui| {
             // });
 
-            if ui.button("Quit").clicked() {
-                app_exit_events.send(AppExit);
-            };
+            ui.horizontal(|ui| {
+                if ui.button("Open Scene").clicked() {
+                    next_sim_state.set(SimulationState::PickSceneFile);
+                };
+                if ui.button("Save Scene").clicked() {
+                    next_sim_state.set(SimulationState::SaveSceneFile);
+                };
+                if ui.button("Quit").clicked() {
+                    app_exit_events.send(AppExit);
+                };
+            });
         });
 
     // controls window
@@ -128,6 +146,7 @@ fn ui_controls(
         match sim_state.get() {
             SimulationState::Paused => next_sim_state.set(SimulationState::Running),
             SimulationState::Running => next_sim_state.set(SimulationState::Paused),
+            SimulationState::PickSceneFile | SimulationState::SaveSceneFile => (),
         }
     }
 }
