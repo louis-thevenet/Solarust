@@ -3,18 +3,20 @@ use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
 use io::SaveLoadPlugin;
+
 use perf_ui::DebugUiPlugin;
 use selected_planet_ui::SelectedPlanetUiPlugin;
 
 use crate::camera::{camera_controller::CameraController, MainCamera};
 use crate::ui::planet_ui::PlanetUiPlugin;
-
 mod io;
+
 mod perf_ui;
 mod planet_ui;
 pub(crate) mod selected_planet_ui;
 
 #[derive(Default, States, Debug, Hash, Eq, Clone, Copy, PartialEq)]
+
 /// The state of the application.
 pub enum SimulationState {
     #[default]
@@ -53,13 +55,11 @@ impl Plugin for UIPlugin {
         app.init_resource::<AppConfig>()
             .init_state::<SimulationState>()
             .add_plugins(EguiPlugin)
-            .add_plugins((
-                DebugUiPlugin,
-                SelectedPlanetUiPlugin,
-                PlanetUiPlugin,
-                SaveLoadPlugin,
-            ))
+            .add_plugins((DebugUiPlugin, SelectedPlanetUiPlugin, PlanetUiPlugin))
             .add_systems(Update, (build_ui, ui_controls));
+
+        #[cfg(not(target_arch = "wasm32"))]
+        app.add_plugins(SaveLoadPlugin);
     }
 }
 

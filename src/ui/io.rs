@@ -12,7 +12,6 @@ use bevy_egui::{
     EguiContexts,
 };
 use serde::{Deserialize, Serialize};
-use tinyfiledialogs::{open_file_dialog_multi, save_file_dialog};
 
 #[derive(Serialize, Deserialize)]
 struct CelestialBodyRelevantData {
@@ -30,6 +29,7 @@ pub struct SaveLoadPlugin;
 
 impl Plugin for SaveLoadPlugin {
     fn build(&self, app: &mut App) {
+        #[cfg(not(target_arch = "wasm32"))]
         app.add_systems(
             Update,
             (
@@ -40,12 +40,15 @@ impl Plugin for SaveLoadPlugin {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn save_scene(
     mut contexts: EguiContexts,
     mut next_sim_state: ResMut<NextState<SimulationState>>,
     query: Query<(&Transform, &CelestialBodyData), Without<MainCamera>>,
     query_cam: Query<&Transform, With<MainCamera>>,
 ) {
+    use tinyfiledialogs::save_file_dialog;
+
     egui::Window::new("Save File").show(contexts.ctx_mut(), |ui| {
         ui.spinner();
 
@@ -89,7 +92,7 @@ fn save_scene(
 
     next_sim_state.set(SimulationState::Paused);
 }
-
+#[cfg(not(target_arch = "wasm32"))]
 fn load_scene(
     mut contexts: EguiContexts,
     mut commands: Commands,
@@ -97,6 +100,8 @@ fn load_scene(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
+    use tinyfiledialogs::open_file_dialog_multi;
+
     egui::Window::new("Open File").show(contexts.ctx_mut(), |ui| {
         ui.spinner();
         let list_path_to_open = match open_file_dialog_multi("Open scene file", "", None) {
@@ -171,32 +176,6 @@ fn load_scene(
                 }
             }
         }
-
-        //     let mut data = AppData {
-        //         camera_position: query_cam.single().translation,
-        //         ..Default::default()
-        //     };
-
-        //     for (transform, body) in &query {
-        //         data.celestial_bodies.push(CelestialBodyRelevantData {
-        //             body_data: body.clone(),
-        //             position: transform.translation,
-        //         });
-        //     }
-
-        //     let serialized_data = match serde_json::to_string(&data) {
-        //         Ok(data) => data,
-        //         Err(e) => {
-        //             info!("Error : {}", e);
-        //             return;
-        //         }
-        //     };
-
-        //     let res = fs::write(&path_to_save, serialized_data);
-        //     match res {
-        //         Ok(_) => info!("File saved to {}", path_to_save),
-        //         Err(e) => info!("Error : {}", e),
-        //     }
     });
 
     next_sim_state.set(SimulationState::Paused);
