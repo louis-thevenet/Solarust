@@ -101,20 +101,27 @@ fn check_selection(
 }
 
 /// Displays the selected planet's data in a floating window.
+#[allow(clippy::too_many_arguments)]
 fn display_selected_planet_window(
     mut commands: Commands,
     mut duplicate: ResMut<Duplicate>,
     mut contexts: EguiContexts,
     mut query_selected_data: Query<
-        (Entity, &mut CelestialBodyData, &mut Transform),
+        (
+            Entity,
+            &mut CelestialBodyData,
+            &mut Transform,
+            Option<&mut Children>,
+        ),
         With<SelectedPlanetMarker>,
     >,
+    mut query_child: Query<&mut PointLight>,
     mut standard_materials: Query<&mut Handle<StandardMaterial>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut gizmos: Gizmos,
 ) {
     // show selection by drawing unit vectors on the selection
-    for (_, body_data, transform) in &query_selected_data {
+    for (_, body_data, transform, _) in &query_selected_data {
         let body_position = transform.translation;
 
         gizmos.arrow(
@@ -137,12 +144,14 @@ fn display_selected_planet_window(
     }
 
     // selection window
-    if let Ok((entity, mut planet, mut tfm)) = query_selected_data.get_single_mut() {
+    if let Ok((entity, mut planet, mut tfm, children)) = query_selected_data.get_single_mut() {
         egui::Window::new(planet.name.clone()).show(contexts.ctx_mut(), |ui| {
+            // Duplicate
             if ui.button("Duplicate").clicked() {
                 duplicate.0 = true;
             }
 
+            // Properties
             ui.horizontal(|ui| {
                 ui.add(egui::DragValue::new(&mut planet.radius));
                 ui.label("Radius");
@@ -154,6 +163,7 @@ fn display_selected_planet_window(
                 ui.label("Mass");
             });
 
+            // Color
             if ui
                 .add(egui::Slider::new(&mut planet.color[0], 0.0_f32..=1.0_f32).text("Red"))
                 .changed()
@@ -170,6 +180,38 @@ fn display_selected_planet_window(
                 }
             }
 
+            // Light factor
+            if planet.body_type == CelestialBodyType::Star
+                && ui
+                    .add(
+                        egui::Slider::new(&mut planet.light_factor, 0.0_f32..=1_000_000_000_f32)
+                            .text("Light"),
+                    )
+                    .changed()
+            {
+                let children = children.unwrap();
+                for &child in children.iter() {
+                    let mut point_light = query_child.get_mut(child).unwrap();
+                    point_light.intensity = planet.light_factor;
+                }
+            }
+
+            // Emissive factor
+            if planet.body_type == CelestialBodyType::Star
+                && ui
+                    .add(
+                        egui::Slider::new(&mut planet.emissive_factor, 0.0_f32..=1_000_f32)
+                            .text("Emissive factor"),
+                    )
+                    .changed()
+            {
+                if let Ok(handle) = standard_materials.get_mut(entity) {
+                    let m = materials.get_mut(handle.id()).unwrap();
+                    m.emissive = m.base_color * planet.emissive_factor;
+                }
+            }
+
+            // Body type
             egui::ComboBox::from_label("Type")
                 .selected_text(format!("{:?}", planet.body_type))
                 .show_ui(ui, |ui| {
@@ -189,23 +231,19 @@ fn display_selected_planet_window(
                     }
 
                     if ui
-                        .selectable_value(
-                            &mut planet.body_type,
-                            CelestialBodyType::Star(1_000_000_000.0),
-                            "Star",
-                        )
+                        .selectable_value(&mut planet.body_type, CelestialBodyType::Star, "Star")
                         .clicked()
                     {
                         if let Ok(handle) = standard_materials.get_mut(entity) {
                             let m = materials.get_mut(handle.id()).unwrap();
-                            m.emissive = m.base_color * 20.;
+                            m.emissive = m.base_color * planet.emissive_factor;
                         }
 
                         commands.entity(entity).with_children(|p| {
                             p.spawn(PointLightBundle {
                                 point_light: PointLight {
                                     color: Color::WHITE,
-                                    intensity: 1_000_000_000.0,
+                                    intensity: planet.light_factor,
                                     range: 1000.0,
                                     radius: planet.radius,
                                     ..default()
@@ -276,10 +314,15 @@ fn add_new_planet(
 
     let cnt = query.iter().count() as f32;
 
-    radius /= cnt;
-    mass /= cnt;
-    position /= cnt;
-    velocity /= cnt;
+    if cnt > 0.0 {
+        radius /= cnt;
+        mass /= cnt;
+        position /= cnt;
+        velocity /= cnt;
+    } else {
+        radius = 3.;
+        mass = 10.;
+    }
     commands.spawn((
         CelestialBodyBundle {
             pbr: PbrBundle {

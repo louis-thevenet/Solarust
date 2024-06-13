@@ -120,16 +120,10 @@ fn load_scene(
                         Err(e) => info!("Error while deserializing data from {} : {}", path, e),
                         Ok(app_data) => {
                             for body in app_data.celestial_bodies {
-                                let light =
-                                    if let CelestialBodyType::Star(l) = body.body_data.body_type {
-                                        l
-                                    } else {
-                                        0.0
-                                    };
                                 let color = Color::rgb_from_array(body.body_data.color);
                                 let material = materials.add(StandardMaterial {
                                     base_color: color,
-                                    emissive: (color * light),
+                                    emissive: color * body.body_data.emissive_factor,
 
                                     ..Default::default()
                                 });
@@ -157,12 +151,12 @@ fn load_scene(
                                         color,
                                     ),
                                 },));
-                                if light > 0.0 {
+                                if body.body_data.body_type == CelestialBodyType::Star {
                                     entity_command.with_children(|p| {
                                         p.spawn(PointLightBundle {
                                             point_light: PointLight {
                                                 color: Color::WHITE,
-                                                intensity: light,
+                                                intensity: body.body_data.light_factor,
                                                 range: 1000.0,
                                                 radius: body.body_data.radius,
                                                 ..default()
