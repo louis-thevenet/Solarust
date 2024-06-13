@@ -47,7 +47,8 @@ nativeBuldInputs = [pkgs.pkg-config];
             RUST_BACKTRACE = "full";
             RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
 
-            packages = buildInputs ++ [toolchain]  ++ wasmBuildInputs ++ nativeBuldInputs;
+            packages = buildInputs ++ [toolchain]  ++ wasmBuildInputs ++ nativeBuldInputs++[pkgs.kdialog
+            ];
             shellHook=''export CARGO_TARGET_WASM32_UNKNOWN_UNKNOWN_RUNNER=wasm-server-runner'';
           };
 

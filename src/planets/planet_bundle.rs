@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Bundle)]
 /// A bundle of components for a `CelestialBody`.
@@ -9,14 +10,14 @@ pub struct CelestialBodyBundle {
     pub body_data: CelestialBodyData,
 }
 
-#[derive(Component, Debug, Clone, PartialEq)]
+#[derive(Component, Debug, Clone, PartialEq, Serialize, Deserialize)]
 /// Different types of `CelestialBodies`
 pub enum CelestialBodyType {
     Planet,
-    Star(f32),
+    Star,
 }
 
-#[derive(Component, Debug, Clone)]
+#[derive(Component, Debug, Clone, Deserialize, Serialize)]
 /// The data for a Body
 pub struct CelestialBodyData {
     /// The body's name, acts as an identifier.
@@ -33,6 +34,10 @@ pub struct CelestialBodyData {
     pub velocity: Vec3,
     /// The body's color.
     pub color: [f32; 3],
+    /// How emissive the material is
+    pub emissive_factor: f32,
+    /// How much light is sent to other bodies (onyl if  it's a star)
+    pub light_factor: f32,
 }
 
 impl CelestialBodyData {
@@ -45,6 +50,10 @@ impl CelestialBodyData {
         initial_velocity: Vec3,
         color: Color,
     ) -> Self {
+        let (emissive, light) = match body_type {
+            CelestialBodyType::Planet => (0.0, 0.0),
+            CelestialBodyType::Star => (18.0, 1_000_000_000.0),
+        };
         Self {
             name,
             body_type,
@@ -53,6 +62,8 @@ impl CelestialBodyData {
             initial_velocity,
             velocity: initial_velocity,
             color: color.rgb_linear_to_vec3().to_array(),
+            emissive_factor: emissive,
+            light_factor: light,
         }
     }
 

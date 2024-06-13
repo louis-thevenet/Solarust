@@ -22,7 +22,7 @@ pub struct PlanetPlugin;
 impl Plugin for PlanetPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(ClearColor(Color::BLACK))
-            .add_systems(Startup, (setup_mutual, setup_simple_stars))
+            .add_systems(Startup, setup_simple_stars)
             .add_systems(Update, rotate)
             .add_systems(
                 FixedUpdate,
@@ -95,6 +95,10 @@ fn setup_test(
         alpha_mode: AlphaMode::Mask(0.0),
         ..Default::default()
     });
+    let planet_material = materials.add(StandardMaterial {
+        alpha_mode: AlphaMode::Mask(0.0),
+        ..Default::default()
+    });
 
     let debug_material = materials.add(StandardMaterial {
         base_color_texture: Some(images.add(uv_debug_texture())),
@@ -109,30 +113,44 @@ fn setup_test(
     let sun = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
     let planet = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
 
-    commands.spawn((CelestialBodyBundle {
-        pbr: PbrBundle {
-            mesh: sun,
-            material: sun_material.clone(),
-            transform: Transform {
-                translation: Default::default(),
-                rotation: Default::default(),
-                scale: Vec3::ONE * sun_radius,
+    commands
+        .spawn((CelestialBodyBundle {
+            pbr: PbrBundle {
+                mesh: sun,
+                material: sun_material.clone(),
+                transform: Transform {
+                    translation: Default::default(),
+                    rotation: Default::default(),
+                    scale: Vec3::ONE * sun_radius,
+                },
+                ..Default::default()
             },
-            ..Default::default()
-        },
-        body_data: CelestialBodyData::new(
-            String::from("Sun"),
-            CelestialBodyType::Star(1.),
-            sun_mass,
-            sun_radius,
-            Vec3::ZERO,
-            Color::YELLOW,
-        ),
-    },));
+            body_data: CelestialBodyData::new(
+                String::from("Sun"),
+                CelestialBodyType::Star,
+                sun_mass,
+                sun_radius,
+                Vec3::ZERO,
+                Color::YELLOW,
+            ),
+        },))
+        .with_children(|p| {
+            p.spawn(PointLightBundle {
+                point_light: PointLight {
+                    color: Color::WHITE,
+                    intensity: 1_000_000_000.0,
+                    range: 1000.0,
+                    radius: sun_radius,
+                    ..default()
+                },
+                ..default()
+            });
+        });
+
     commands.spawn((CelestialBodyBundle {
         pbr: PbrBundle {
             mesh: planet,
-            material: debug_material.clone(),
+            material: planet_material.clone(),
             transform: Transform {
                 translation: Vec3::new(100.0, 0.0, 0.0),
                 scale: Vec3::ONE * planet_radius,
@@ -150,11 +168,6 @@ fn setup_test(
             Color::BLUE,
         ),
     },));
-    // light
-    commands.spawn(DirectionalLightBundle {
-        transform: Transform::from_translation(Vec3::ONE).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
 }
 
 /// Sets up a simple scene.
@@ -193,7 +206,7 @@ fn setup_mutual(
             },
             body_data: CelestialBodyData::new(
                 String::from("Sun"),
-                CelestialBodyType::Star(1.),
+                CelestialBodyType::Star,
                 sun_mass,
                 sun_radius,
                 Vec3::ZERO,
