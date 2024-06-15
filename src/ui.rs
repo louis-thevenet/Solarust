@@ -110,12 +110,14 @@ fn build_ui(
             // });
 
             ui.horizontal(|ui| {
-                if ui.button("Open Scene").clicked() {
-                    next_sim_state.set(SimulationState::PickSceneFile);
-                };
-                if ui.button("Save Scene").clicked() {
-                    next_sim_state.set(SimulationState::SaveSceneFile);
-                };
+                if cfg!(not(target_arch = "wasm32")) {
+                    if ui.button("Open Scene").clicked() {
+                        next_sim_state.set(SimulationState::PickSceneFile);
+                    };
+                    if ui.button("Save Scene").clicked() {
+                        next_sim_state.set(SimulationState::SaveSceneFile);
+                    };
+                }
                 if ui.button("Quit").clicked() {
                     app_exit_events.send(AppExit);
                 };

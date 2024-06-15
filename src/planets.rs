@@ -171,6 +171,7 @@ fn setup_test(
 }
 
 /// Sets up a simple scene.
+#[allow(unused)]
 fn setup_mutual(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -294,7 +295,11 @@ fn setup_simple_stars(
     let star_mesh = meshes.add(Sphere::new(1.0).mesh().ico(5).unwrap());
     let inner_bound = 5000.0;
     let outer_bound = 50000.0;
-    let stars_count = 10000;
+    let stars_count = if cfg!(target_arch = "wasm32") {
+        3000
+    } else {
+        10000
+    };
     for _ in 0..stars_count {
         let x = rng.gen_range(0.0..(outer_bound - inner_bound))
             * if rng.gen_bool(0.5) { 1.0 } else { -1.0 };
