@@ -6,7 +6,7 @@ pub struct PlanetUiPlugin;
 
 impl Plugin for PlanetUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, draw_vectors.run_if(run_if_draw_velocities))
+        app.add_systems(Update, draw_velocity_vectors.run_if(run_if_draw_velocities))
             .add_systems(Update, draw_trajectories.run_if(run_if_draw_trajectories));
     }
 }
@@ -17,7 +17,7 @@ fn run_if_draw_velocities(app_config: Res<AppConfig>) -> bool {
 }
 
 /// Draws velocity vectors for all bodies.
-fn draw_vectors(
+fn draw_velocity_vectors(
     mut gizmos: Gizmos,
     query: Query<(&CelestialBodyData, &Transform), With<CelestialBodyData>>,
 ) {

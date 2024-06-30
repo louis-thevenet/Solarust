@@ -73,9 +73,7 @@ fn check_selection(
     let Some(cursor_position) = q_windows.single().cursor_position() else {
         return;
     };
-
     let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-        //clear_selection(&mut commands, query_selected.get_single_mut());
         return;
     };
 
@@ -97,7 +95,6 @@ fn check_selection(
             return;
         }
     }
-    //clear_selection(&mut commands, query_selected.get_single_mut());
 }
 
 /// Displays the selected planet's data in a floating window.

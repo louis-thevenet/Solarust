@@ -109,6 +109,7 @@ fn build_ui(
             // ui.collapsing("Debug", |ui| {
             // });
 
+            #[cfg(not(target_arch = "wasm32"))]
             ui.horizontal(|ui| {
                 if cfg!(not(target_arch = "wasm32")) {
                     if ui.button("Open Scene").clicked() {
